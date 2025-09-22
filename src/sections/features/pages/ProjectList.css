@@ -1,0 +1,83 @@
+/* Background like screenshot: pale neutral with warm tint on toolbar */
+.projects-page{
+  padding: 6px 8px;
+}
+
+.projects-actions{
+  margin: 6px 0 8px;
+}
+
+/* Card container */
+.projects-card.card{
+  border-radius: 10px;
+  border: 1px solid var(--pm-border, #d1d5db);
+  overflow: hidden;
+}
+
+/* Top toolbar (buttery strip) */
+.projects-toolbar{
+  background: #f6eec7; /* warm pale */
+  border-bottom: 1px solid #e5dca8;
+  padding: 10px;
+  position: relative;
+}
+.projects-toolbar .title{
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.projects-toolbar .filters{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.filter-item{
+  min-width: 160px;
+  border-radius: 8px !important;
+  width: auto !important;
+}
+
+/* Floating add button (right edge, like screenshot) */
+.fab-add{
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 12px;
+  padding: .35rem .6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Table look: cool blue zebra rows */
+.projects-table thead th{
+  background: #e9f2f6;
+  color: #374151;
+  border-bottom: 1px solid #cfe3ec;
+  font-weight: 600;
+}
+.projects-table tbody tr:nth-child(odd){
+  background: #e6f6ff; /* light blue like screenshot rows */
+}
+.projects-table tbody tr:nth-child(even){
+  background: #d8eef9;
+}
+.projects-table td, .projects-table th{
+  vertical-align: middle;
+}
+
+/* Small sort indicator */
+th .sort{ color:#9ca3af; }
+th .sort.asc  { color:#0d6efd; transform: rotate(180deg); display:inline-block; }
+th .sort.desc { color:#0d6efd; }
+
+/* Modal polish */
+.modal-content{ border-radius: 10px; }
+.modal-header{ border-bottom: 1px solid #e5e7eb; }
+.modal-footer{ border-top: 1px solid #e5e7eb; }
+
+/* Narrow screens */
+@media (max-width: 576px){
+  .filter-item{ min-width: 120px; }
+  .fab-add{ top: auto; bottom: 10px; transform:none; }
+}

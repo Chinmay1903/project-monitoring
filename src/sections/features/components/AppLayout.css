@@ -1,0 +1,9 @@
+/* keep content full-width but give a tiny vertical rhythm */
+.app-main{
+  padding: 8px 12px;
+}
+
+.app-footer{
+  padding: 10px 12px;
+  color: var(--pm-muted, #6b7280);
+}
