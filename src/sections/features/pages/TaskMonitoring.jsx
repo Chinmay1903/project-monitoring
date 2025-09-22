@@ -31,7 +31,7 @@ export default function TaskMonitoring() {
       </th>
     );
   };
-  const toYMD = (d) => (d instanceof Date ? d.toISOString().slice(0,10) : d);
+  const toYMD = (d) => (d instanceof Date ? d.toISOString().slice(0, 10) : d);
   const today = toYMD(new Date());
 
   /* ------------------------------ trainer map ------------------------------ */
@@ -40,23 +40,23 @@ export default function TaskMonitoring() {
     GMS101: {
       name: "Asha Kumar",
       projects: [
-        { project:"Inventory Revamp", manager:"N. Gupta",  lead:"S. Rao",   podLead:"M. Iyer" },
-        { project:"Partner Portal",   manager:"N. Gupta",  lead:"S. Rao",   podLead:"M. Iyer" },
-        { project:"Mobile App v3",    manager:"L. Kulkarni", lead:"A. Verma", podLead:"Z. Khan" },
+        { project: "Inventory Revamp", manager: "N. Gupta", lead: "S. Rao", podLead: "M. Iyer" },
+        { project: "Partner Portal", manager: "N. Gupta", lead: "S. Rao", podLead: "M. Iyer" },
+        { project: "Mobile App v3", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan" },
       ],
     },
     GMS102: {
       name: "Rahul Shah",
       projects: [
-        { project:"Billing Migration", manager:"N. Gupta",  lead:"P. Mehta", podLead:"M. Iyer" },
-        { project:"Fraud Engine",      manager:"L. Kulkarni", lead:"A. Verma", podLead:"Z. Khan" },
+        { project: "Billing Migration", manager: "N. Gupta", lead: "P. Mehta", podLead: "M. Iyer" },
+        { project: "Fraud Engine", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan" },
       ],
     },
     GMS103: {
       name: "Ishita Bose",
       projects: [
-        { project:"Mobile App v3",     manager:"L. Kulkarni", lead:"A. Verma", podLead:"Z. Khan" },
-        { project:"Data Lake ETL",     manager:"L. Kulkarni", lead:"A. Verma", podLead:"Z. Khan" },
+        { project: "Mobile App v3", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan" },
+        { project: "Data Lake ETL", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan" },
       ],
     },
   };
@@ -65,20 +65,20 @@ export default function TaskMonitoring() {
   /* -------------------------------- seed data ------------------------------ */
   const seed = [
     // 2025-08-29 (from your screenshot)
-    { id:"t1", date:"2025-08-29", trainerId:"GMS101", trainer:"Asha Kumar",  project:"Inventory Revamp", manager:"N. Gupta",  lead:"S. Rao",   podLead:"M. Iyer", hours:6, newTask:6, reworked:2, prPassed:2, approved:2 },
-    { id:"t2", date:"2025-08-29", trainerId:"GMS101", trainer:"Asha Kumar",  project:"Partner Portal",   manager:"N. Gupta",  lead:"S. Rao",   podLead:"M. Iyer", hours:2, newTask:3, reworked:1, prPassed:1, approved:1 },
-    { id:"t3", date:"2025-08-29", trainerId:"GMS102", trainer:"Rahul Shah",  project:"Billing Migration", manager:"N. Gupta", lead:"P. Mehta", podLead:"M. Iyer", hours:4, newTask:4, reworked:1, prPassed:1, approved:1 },
+    { id: "t1", date: "2025-08-29", trainerId: "GMS101", trainer: "Asha Kumar", project: "Inventory Revamp", manager: "N. Gupta", lead: "S. Rao", podLead: "M. Iyer", hours: 6, newTask: 6, reworked: 2, prPassed: 2, approved: 2 },
+    { id: "t2", date: "2025-08-29", trainerId: "GMS101", trainer: "Asha Kumar", project: "Partner Portal", manager: "N. Gupta", lead: "S. Rao", podLead: "M. Iyer", hours: 2, newTask: 3, reworked: 1, prPassed: 1, approved: 1 },
+    { id: "t3", date: "2025-08-29", trainerId: "GMS102", trainer: "Rahul Shah", project: "Billing Migration", manager: "N. Gupta", lead: "P. Mehta", podLead: "M. Iyer", hours: 4, newTask: 4, reworked: 1, prPassed: 1, approved: 1 },
     // a spread across the month for charts/tabs
-    { id:"t4", date:"2025-08-05", trainerId:"GMS101", trainer:"Asha Kumar",  project:"Inventory Revamp", manager:"N. Gupta",  lead:"S. Rao",   podLead:"M. Iyer", hours:7, newTask:5, reworked:2, prPassed:2, approved:2 },
-    { id:"t5", date:"2025-08-12", trainerId:"GMS101", trainer:"Asha Kumar",  project:"Mobile App v3",    manager:"L. Kulkarni", lead:"A. Verma", podLead:"Z. Khan", hours:8, newTask:3, reworked:1, prPassed:1, approved:1 },
-    { id:"t6", date:"2025-08-10", trainerId:"GMS102", trainer:"Rahul Shah",  project:"Fraud Engine",     manager:"L. Kulkarni", lead:"A. Verma", podLead:"Z. Khan", hours:6, newTask:2, reworked:1, prPassed:1, approved:1 },
-    { id:"t7", date:"2025-08-18", trainerId:"GMS102", trainer:"Rahul Shah",  project:"Billing Migration", manager:"N. Gupta", lead:"P. Mehta", podLead:"M. Iyer", hours:5, newTask:4, reworked:0, prPassed:1, approved:1 },
-    { id:"t8", date:"2025-08-03", trainerId:"GMS103", trainer:"Ishita Bose", project:"Mobile App v3",    manager:"L. Kulkarni", lead:"A. Verma", podLead:"Z. Khan", hours:6, newTask:2, reworked:1, prPassed:1, approved:1 },
-    { id:"t9", date:"2025-08-16", trainerId:"GMS103", trainer:"Ishita Bose", project:"Data Lake ETL",    manager:"L. Kulkarni", lead:"A. Verma", podLead:"Z. Khan", hours:7, newTask:3, reworked:1, prPassed:1, approved:1 },
-    { id:"t10", date:"2025-08-22", trainerId:"GMS103", trainer:"Ishita Bose", project:"Mobile App v3",   manager:"L. Kulkarni", lead:"A. Verma", podLead:"Z. Khan", hours:4, newTask:2, reworked:1, prPassed:1, approved:1 },
+    { id: "t4", date: "2025-08-05", trainerId: "GMS101", trainer: "Asha Kumar", project: "Inventory Revamp", manager: "N. Gupta", lead: "S. Rao", podLead: "M. Iyer", hours: 7, newTask: 5, reworked: 2, prPassed: 2, approved: 2 },
+    { id: "t5", date: "2025-08-12", trainerId: "GMS101", trainer: "Asha Kumar", project: "Mobile App v3", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 8, newTask: 3, reworked: 1, prPassed: 1, approved: 1 },
+    { id: "t6", date: "2025-08-10", trainerId: "GMS102", trainer: "Rahul Shah", project: "Fraud Engine", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 6, newTask: 2, reworked: 1, prPassed: 1, approved: 1 },
+    { id: "t7", date: "2025-08-18", trainerId: "GMS102", trainer: "Rahul Shah", project: "Billing Migration", manager: "N. Gupta", lead: "P. Mehta", podLead: "M. Iyer", hours: 5, newTask: 4, reworked: 0, prPassed: 1, approved: 1 },
+    { id: "t8", date: "2025-08-03", trainerId: "GMS103", trainer: "Ishita Bose", project: "Mobile App v3", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 6, newTask: 2, reworked: 1, prPassed: 1, approved: 1 },
+    { id: "t9", date: "2025-08-16", trainerId: "GMS103", trainer: "Ishita Bose", project: "Data Lake ETL", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 7, newTask: 3, reworked: 1, prPassed: 1, approved: 1 },
+    { id: "t10", date: "2025-08-22", trainerId: "GMS103", trainer: "Ishita Bose", project: "Mobile App v3", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 4, newTask: 2, reworked: 1, prPassed: 1, approved: 1 },
     // a couple near month end for "week"
-    { id:"t11", date:"2025-08-27", trainerId:"GMS101", trainer:"Asha Kumar", project:"Partner Portal",   manager:"N. Gupta",  lead:"S. Rao",   podLead:"M. Iyer", hours:3, newTask:2, reworked:0, prPassed:1, approved:1 },
-    { id:"t12", date:"2025-08-28", trainerId:"GMS102", trainer:"Rahul Shah", project:"Fraud Engine",     manager:"L. Kulkarni", lead:"A. Verma", podLead:"Z. Khan", hours:6, newTask:3, reworked:1, prPassed:1, approved:1 },
+    { id: "t11", date: "2025-08-27", trainerId: "GMS101", trainer: "Asha Kumar", project: "Partner Portal", manager: "N. Gupta", lead: "S. Rao", podLead: "M. Iyer", hours: 3, newTask: 2, reworked: 0, prPassed: 1, approved: 1 },
+    { id: "t12", date: "2025-08-28", trainerId: "GMS102", trainer: "Rahul Shah", project: "Fraud Engine", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 6, newTask: 3, reworked: 1, prPassed: 1, approved: 1 },
   ];
   const [rows, setRows] = useState(seed);
 
@@ -186,12 +186,17 @@ export default function TaskMonitoring() {
 
   // available projects (exclude ones already entered for that trainer + date)
   const availableProjects = useMemo(() => {
-    const base = trainerMap[form.trainerId]?.projects || [];
+    const base = trainerMap[form.trainerId]?.projects ?? [];
     const taken = rows
-      .filter(r => r.trainerId === form.trainerId && r.date === form.date && (mode === "add" || r.id !== form.id))
+      .filter(r =>
+        r.trainerId === form.trainerId &&
+        r.date === form.date &&
+        (mode === "add" || r.id !== form.id)
+      )
       .map(r => r.project);
     return base.filter(p => !taken.includes(p.project));
-  }, [form.trainerId, form.date, rows, mode, form.id]);
+  }, [trainerMap, form.trainerId, form.date, rows, mode, form.id]);
+
 
   /* -------------------------------- validation ------------------------------- */
   const hoursNum = Number(form.hours || 0);
@@ -199,11 +204,11 @@ export default function TaskMonitoring() {
   const errors = useMemo(() => {
     const e = {};
     if (!form.trainerId) e.trainerId = "Trainer is required.";
-    if (!form.project)   e.project   = "Project is required.";
-    if (!form.date)      e.date      = "Date is required.";
+    if (!form.project) e.project = "Project is required.";
+    if (!form.date) e.date = "Date is required.";
     if (form.hours === "" || isNaN(hoursNum)) e.hours = "Hours are required.";
     else if (!form.overtime && hoursNum > 8) e.hours = "Max 8 hrs unless Overtime is checked.";
-    if (!numOk(form.newTask))  e.newTask  = "Digits only.";
+    if (!numOk(form.newTask)) e.newTask = "Digits only.";
     if (!numOk(form.reworked)) e.reworked = "Digits only.";
     if (!numOk(form.prPassed)) e.prPassed = "Digits only.";
     if (!numOk(form.approved)) e.approved = "Digits only.";
@@ -217,7 +222,7 @@ export default function TaskMonitoring() {
 
     // create/update
     if (mode === "add") {
-      const id = "t" + Math.random().toString(36).slice(2,8);
+      const id = "t" + Math.random().toString(36).slice(2, 8);
       setRows(prev => [
         { id, ...form, hours: Number(form.hours || 0), newTask: Number(form.newTask || 0), reworked: Number(form.reworked || 0), prPassed: Number(form.prPassed || 0), approved: Number(form.approved || 0) },
         ...prev
@@ -235,30 +240,31 @@ export default function TaskMonitoring() {
   const baseRows = useMemo(() => {
     let d = rows.filter(r => isInRange(r.date));
     if (view.type === "trainer") d = d.filter(r => r.trainerId === view.trainerId);
-    d.sort((a,b)=>{
+
+    d.sort((a, b) => {
       const A = (a[sortKey] ?? "").toString().toLowerCase();
       const B = (b[sortKey] ?? "").toString().toLowerCase();
       const cmp = A < B ? -1 : A > B ? 1 : 0;
       return sortDir === "asc" ? cmp : -cmp;
     });
     return d;
-  }, [rows, view, range, sortKey, sortDir]);
+  }, [rows, isInRange, view.type, view.trainerId, sortKey, sortDir]);
 
   // aggregates for charts (current filtered scope)
   const agg = useMemo(() => {
     const total = baseRows.reduce((acc, r) => {
-      acc.newTask  += Number(r.newTask || 0);
+      acc.newTask += Number(r.newTask || 0);
       acc.reworked += Number(r.reworked || 0);
       acc.prPassed += Number(r.prPassed || 0);
       acc.approved += Number(r.approved || 0);
       return acc;
-    }, { newTask:0, reworked:0, prPassed:0, approved:0 });
+    }, { newTask: 0, reworked: 0, prPassed: 0, approved: 0 });
 
     // hours-by-date for line
     const map = {};
     baseRows.forEach(r => { map[r.date] = (map[r.date] || 0) + Number(r.hours || 0); });
     const days = Object.keys(map).sort();
-    const hoursSeries = days.map(d => ({ date: new Date(d).toLocaleDateString("en-US", { month:"short", day:"2-digit" }), hours: map[d] }));
+    const hoursSeries = days.map(d => ({ date: new Date(d).toLocaleDateString("en-US", { month: "short", day: "2-digit" }), hours: map[d] }));
 
     return { total, hoursSeries };
   }, [baseRows]);
@@ -276,7 +282,7 @@ export default function TaskMonitoring() {
           <div className="tasks-toolbar">
             <div className="d-flex align-items-center gap-2 flex-wrap">
               {view.type === "trainer" && (
-                <button className="btn btn-light btn-sm me-1" onClick={()=>setView({ type:"overview" })} title="Back">
+                <button className="btn btn-light btn-sm me-1" onClick={() => setView({ type: "overview" })} title="Back">
                   <i className="bi bi-arrow-left" />
                 </button>
               )}
@@ -287,14 +293,14 @@ export default function TaskMonitoring() {
               </div>
 
               <div className="btn-group ms-2" role="group" aria-label="range">
-                {["day","week","month","overall"].map(r => (
+                {["day", "week", "month", "overall"].map(r => (
                   <button
                     key={r}
-                    className={"btn btn-outline-secondary btn-sm " + (range===r ? "active" : "")}
-                    onClick={()=>setRange(r)}
+                    className={"btn btn-outline-secondary btn-sm " + (range === r ? "active" : "")}
+                    onClick={() => setRange(r)}
                     type="button"
                   >
-                    {r[0].toUpperCase()+r.slice(1)}
+                    {r[0].toUpperCase() + r.slice(1)}
                   </button>
                 ))}
               </div>
@@ -310,26 +316,26 @@ export default function TaskMonitoring() {
             <table className="table table-hover tasks-table">
               <thead>
                 <tr>
-                  <Th label="Date"       k="date" />
+                  <Th label="Date" k="date" />
                   <Th label="Trainer (ID)" k="trainer" />
-                  <Th label="Project"    k="project" />
-                  <Th label="Manager"    k="manager" />
-                  <Th label="Lead"       k="lead" />
-                  <Th label="Pod Lead"   k="podLead" />
-                  <Th label="Hours"      k="hours" />
-                  <Th label="New Task"   k="newTask" />
-                  <Th label="Reworked"   k="reworked" />
-                  <Th label="PR Passed"  k="prPassed" />
-                  <Th label="Approved"   k="approved" />
-                  <th style={{width:110}} className="text-end">Actions</th>
+                  <Th label="Project" k="project" />
+                  <Th label="Manager" k="manager" />
+                  <Th label="Lead" k="lead" />
+                  <Th label="Pod Lead" k="podLead" />
+                  <Th label="Hours" k="hours" />
+                  <Th label="New Task" k="newTask" />
+                  <Th label="Reworked" k="reworked" />
+                  <Th label="PR Passed" k="prPassed" />
+                  <Th label="Approved" k="approved" />
+                  <th style={{ width: 110 }} className="text-end">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {baseRows.map(r=>(
+                {baseRows.map(r => (
                   <tr key={r.id}>
                     <td>{r.date}</td>
                     <td>
-                      <a href="#0" className="name-link" onClick={()=>setView({ type:"trainer", trainerId:r.trainerId, name:r.trainer })}>
+                      <a href="#0" className="name-link" onClick={() => setView({ type: "trainer", trainerId: r.trainerId, name: r.trainer })}>
                         {r.trainer}
                       </a> <span className="text-muted">({r.trainerId})</span>
                     </td>
@@ -344,8 +350,8 @@ export default function TaskMonitoring() {
                     <td className="text-success fw-semibold">{r.approved}</td>
                     <td className="text-end">
                       <div className="btn-group btn-group-sm">
-                        <button className="btn btn-outline-secondary" onClick={()=>onEdit(r)} title="Edit"><i className="bi bi-pencil-square" /></button>
-                        <button className="btn btn-outline-danger" onClick={()=>onDelete(r.id)} title="Delete"><i className="bi bi-trash" /></button>
+                        <button className="btn btn-outline-secondary" onClick={() => onEdit(r)} title="Edit"><i className="bi bi-pencil-square" /></button>
+                        <button className="btn btn-outline-danger" onClick={() => onDelete(r.id)} title="Delete"><i className="bi bi-trash" /></button>
                       </div>
                     </td>
                   </tr>
@@ -363,21 +369,21 @@ export default function TaskMonitoring() {
           <div className="row g-2 mt-2">
             <div className="col-12 col-lg-6">
               <div className="card shadow-sm h-100">
-                <div className="card-header"><h6 className="mb-0"># of Tasks by Status — {range[0].toUpperCase()+range.slice(1)}</h6></div>
+                <div className="card-header"><h6 className="mb-0"># of Tasks by Status — {range[0].toUpperCase() + range.slice(1)}</h6></div>
                 <div className="card-body">
-                  <div style={{width:"100%", height:260}}>
+                  <div style={{ width: "100%", height: 260 }}>
                     <ResponsiveContainer>
                       <BarChart data={[
-                        { status:"New Task",  count: agg.total.newTask },
-                        { status:"Reworked",  count: agg.total.reworked },
-                        { status:"PR Passed", count: agg.total.prPassed },
-                        { status:"Approved",  count: agg.total.approved },
+                        { status: "New Task", count: agg.total.newTask },
+                        { status: "Reworked", count: agg.total.reworked },
+                        { status: "PR Passed", count: agg.total.prPassed },
+                        { status: "Approved", count: agg.total.approved },
                       ]}>
                         <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" />
                         <XAxis dataKey="status" />
                         <YAxis allowDecimals={false} />
                         <Tooltip />
-                        <Bar dataKey="count" fill="#b7d3f9" radius={[4,4,0,0]} />
+                        <Bar dataKey="count" fill="#b7d3f9" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -389,7 +395,7 @@ export default function TaskMonitoring() {
               <div className="card shadow-sm h-100">
                 <div className="card-header"><h6 className="mb-0">Monthly Hours</h6></div>
                 <div className="card-body">
-                  <div style={{width:"100%", height:260}}>
+                  <div style={{ width: "100%", height: 260 }}>
                     <ResponsiveContainer>
                       <LineChart data={agg.hoursSeries}>
                         <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" />
@@ -414,7 +420,7 @@ export default function TaskMonitoring() {
                 <div className="modal-content">
                   <div className="modal-header">
                     <h5 className="modal-title">{mode === "add" ? "Add Task Entry" : "Edit Task Entry"}</h5>
-                    <button type="button" className="btn-close" onClick={()=>setShowModal(false)} aria-label="Close" />
+                    <button type="button" className="btn-close" onClick={() => setShowModal(false)} aria-label="Close" />
                   </div>
 
                   <form onSubmit={onSave} noValidate>
@@ -424,9 +430,9 @@ export default function TaskMonitoring() {
                           <div className="col-12 col-md-6">
                             <label className="form-label">Trainer Name <span className="text-danger">*</span></label>
                             <select
-                              className={`form-select ${submitted && errors.trainerId ? "is-invalid":""}`}
+                              className={`form-select ${submitted && errors.trainerId ? "is-invalid" : ""}`}
                               value={form.trainerId}
-                              onChange={e=>onTrainerChange(e.target.value)}
+                              onChange={e => onTrainerChange(e.target.value)}
                             >
                               <option value="">Select trainer</option>
                               {trainers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
@@ -442,9 +448,9 @@ export default function TaskMonitoring() {
                           <div className="col-12 col-md-6">
                             <label className="form-label">Project Name <span className="text-danger">*</span></label>
                             <select
-                              className={`form-select ${submitted && errors.project ? "is-invalid":""}`}
+                              className={`form-select ${submitted && errors.project ? "is-invalid" : ""}`}
                               value={form.project}
-                              onChange={e=>onProjectChange(e.target.value)}
+                              onChange={e => onProjectChange(e.target.value)}
                               disabled={!form.trainerId}
                             >
                               <option value="">{form.trainerId ? "Select project" : "Select trainer first"}</option>
@@ -473,9 +479,9 @@ export default function TaskMonitoring() {
                             <label className="form-label">Date <span className="text-danger">*</span></label>
                             <input
                               type="date"
-                              className={`form-control ${submitted && errors.date ? "is-invalid":""}`}
+                              className={`form-control ${submitted && errors.date ? "is-invalid" : ""}`}
                               value={form.date}
-                              onChange={e=>setForm(f=>({ ...f, date:e.target.value }))}
+                              onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
                             />
                             {submitted && errors.date && <div className="invalid-feedback">{errors.date}</div>}
                           </div>
@@ -484,13 +490,13 @@ export default function TaskMonitoring() {
                             <label className="form-label">Hours Worked <span className="text-danger">*</span></label>
                             <div className="d-flex align-items-center gap-2">
                               <input
-                                className={`form-control ${submitted && errors.hours ? "is-invalid":""}`}
+                                className={`form-control ${submitted && errors.hours ? "is-invalid" : ""}`}
                                 value={form.hours}
-                                onChange={e=>setForm(f=>({ ...f, hours:e.target.value }))}
+                                onChange={e => setForm(f => ({ ...f, hours: e.target.value }))}
                                 placeholder="0-8"
                               />
                               <div className="form-check ms-2">
-                                <input className="form-check-input" type="checkbox" id="chkOt" checked={form.overtime} onChange={e=>setForm(f=>({ ...f, overtime:e.target.checked }))}/>
+                                <input className="form-check-input" type="checkbox" id="chkOt" checked={form.overtime} onChange={e => setForm(f => ({ ...f, overtime: e.target.checked }))} />
                                 <label className="form-check-label" htmlFor="chkOt">Overtime</label>
                               </div>
                             </div>
@@ -500,22 +506,22 @@ export default function TaskMonitoring() {
 
                           <div className="col-12 col-md-3">
                             <label className="form-label text-primary">New Tasks</label>
-                            <input className={`form-control ${submitted && errors.newTask ? "is-invalid":""}`} value={form.newTask} onChange={e=>setForm(f=>({ ...f, newTask:e.target.value }))}/>
+                            <input className={`form-control ${submitted && errors.newTask ? "is-invalid" : ""}`} value={form.newTask} onChange={e => setForm(f => ({ ...f, newTask: e.target.value }))} />
                             {submitted && errors.newTask && <div className="invalid-feedback">{errors.newTask}</div>}
                           </div>
                           <div className="col-12 col-md-3">
                             <label className="form-label text-danger">Reworked</label>
-                            <input className={`form-control ${submitted && errors.reworked ? "is-invalid":""}`} value={form.reworked} onChange={e=>setForm(f=>({ ...f, reworked:e.target.value }))}/>
+                            <input className={`form-control ${submitted && errors.reworked ? "is-invalid" : ""}`} value={form.reworked} onChange={e => setForm(f => ({ ...f, reworked: e.target.value }))} />
                             {submitted && errors.reworked && <div className="invalid-feedback">{errors.reworked}</div>}
                           </div>
                           <div className="col-12 col-md-3">
                             <label className="form-label text-info">PR Passed</label>
-                            <input className={`form-control ${submitted && errors.prPassed ? "is-invalid":""}`} value={form.prPassed} onChange={e=>setForm(f=>({ ...f, prPassed:e.target.value }))}/>
+                            <input className={`form-control ${submitted && errors.prPassed ? "is-invalid" : ""}`} value={form.prPassed} onChange={e => setForm(f => ({ ...f, prPassed: e.target.value }))} />
                             {submitted && errors.prPassed && <div className="invalid-feedback">{errors.prPassed}</div>}
                           </div>
                           <div className="col-12 col-md-3">
                             <label className="form-label text-success">Approved</label>
-                            <input className={`form-control ${submitted && errors.approved ? "is-invalid":""}`} value={form.approved} onChange={e=>setForm(f=>({ ...f, approved:e.target.value }))}/>
+                            <input className={`form-control ${submitted && errors.approved ? "is-invalid" : ""}`} value={form.approved} onChange={e => setForm(f => ({ ...f, approved: e.target.value }))} />
                             {submitted && errors.approved && <div className="invalid-feedback">{errors.approved}</div>}
                           </div>
                         </div>
@@ -524,7 +530,7 @@ export default function TaskMonitoring() {
 
                     <div className="modal-footer">
                       <button type="submit" className="btn btn-primary">Save</button>
-                      <button type="button" className="btn btn-outline-secondary" onClick={()=>setShowModal(false)}>Close</button>
+                      <button type="button" className="btn btn-outline-secondary" onClick={() => setShowModal(false)}>Close</button>
                     </div>
                   </form>
                 </div>
