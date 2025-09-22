@@ -7,8 +7,6 @@ import ProjectList from "./sections/features/pages/ProjectList";
 import ResourceList from "./sections/features/pages/ResourceList";
 import TaskMonitoring from "./sections/features/pages/TaskMonitoring";
 
-const Placeholder = ({ title }) => <div style={{padding:24}}> {title} </div>;
-
 function App() {
   return (
     <div>
