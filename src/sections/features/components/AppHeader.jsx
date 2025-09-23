@@ -1,5 +1,5 @@
-import React from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { NavLink, useLocation, useNavigate  } from "react-router-dom";
 import "./AppHeader.css";
 
 const ROUTE_TITLES = {
@@ -10,10 +10,43 @@ const ROUTE_TITLES = {
 };
 
 export default function AppHeader({
-    logoSrc = "images/logo.png",
+    logoSrc = "images/headerLogo.svg",
 }) {
+    const navigate = useNavigate();
     const location = useLocation();
     const routeTitle = ROUTE_TITLES[location.pathname] || "";
+
+    const [open, setOpen] = useState(false);
+    const wrapRef = useRef(null);
+
+    const toggleMenu = () => setOpen((v) => !v);
+    const closeMenu = () => setOpen(false);
+
+    // close on outside click
+    useEffect(() => {
+        const onDocClick = (e) => {
+            if (!wrapRef.current) return;
+            if (!wrapRef.current.contains(e.target)) setOpen(false);
+        };
+        document.addEventListener("mousedown", onDocClick);
+        return () => document.removeEventListener("mousedown", onDocClick);
+    }, []);
+
+    // close on route change
+    useEffect(() => { setOpen(false); }, [location.pathname]);
+
+    // ESC to close
+    useEffect(() => {
+        const onKey = (e) => e.key === "Escape" && setOpen(false);
+        document.addEventListener("keydown", onKey);
+        return () => document.removeEventListener("keydown", onKey);
+    }, []);
+
+    const handleLogout = () => {
+        // clear any auth state if you store it
+        // localStorage.removeItem("token");
+        navigate("/", { replace: true }); // adjust if your login route is different
+    };
 
     return (
         <header className="app-header-root pm-appbar d-flex align-items-center justify-content-between mb-2">
@@ -49,10 +82,31 @@ export default function AppHeader({
                 </li>
             </ul>
 
-            {/* Admin chip (right) */}
-            <button className="pm-admin btn btn-sm">
-                <i className="bi bi-person-circle me-1"></i> Admin
-            </button>
+            {/* Admin chip (right) + dropdown */}
+            <div className="pm-admin-wrap" ref={wrapRef}>
+                <button
+                    className="pm-admin btn btn-sm"
+                    onClick={toggleMenu}
+                    aria-haspopup="menu"
+                    aria-expanded={open ? "true" : "false"}
+                >
+                    <i className="bi bi-person-circle me-1"></i> Admin
+                    <i className="bi bi-caret-down ms-1 small"></i>
+                </button>
+
+                <div className={`pm-admin-menu ${open ? "show" : ""}`} role="menu">
+                    {/* <button className="pm-menu-item" type="button" onClick={closeMenu}>
+                        <i className="bi bi-person me-2"></i> Profile
+                    </button>
+                    <button className="pm-menu-item" type="button" onClick={closeMenu}>
+                        <i className="bi bi-gear me-2"></i> Settings
+                    </button>
+                    <div className="pm-menu-divider" /> */}
+                    <button className="pm-menu-item text-danger" type="button" onClick={handleLogout}>
+                        <i className="bi bi-box-arrow-right me-2"></i> Logout
+                    </button>
+                </div>
+            </div>
         </header>
     );
 }

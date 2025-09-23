@@ -9,7 +9,7 @@ export default function AuthLayout({ children }) {
     <div className="auth-root auth-layout">
       <header className="site-logo" role="banner">
         <Link to="/" className="site-logo__link" aria-label="home">
-          <img src="images/logo.png" alt="logo" className="site-logo__img" />
+          <img src="images/headerLogo.svg" alt="logo" className="site-logo__img" />
         </Link>
       </header>
 
