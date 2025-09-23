@@ -9,7 +9,7 @@
 
   background: var(--pm-bg);
   color:#111827;
-  min-height:100%;
+  min-height:100vh;
   padding: 10px 12px; /* tight page paddings like the image */
 }
 
