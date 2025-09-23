@@ -107,8 +107,8 @@ function OverviewTable() {
             <tr key={idx}>
               <td>{r.project}</td>
               <td>{r.manager}</td>
-              <td><u>{r.lead}</u></td>
-              <td><u>{r.pod}</u></td>
+              <td>{r.lead}</td>
+              <td>{r.pod}</td>
               <td>{r.trainers}</td>
               <td>{r.hours}</td>
               <td>{r.start}</td>

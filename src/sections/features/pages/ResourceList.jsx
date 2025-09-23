@@ -22,18 +22,18 @@ export default function ResourceList() {
 
     // ---------- demo rows (include qualification/state/city) ----------
     const seed = [
-        { id: "GMS101", name: "Asha Kumar", role: "Trainer", gender: "Female", email: "asha.k@example.com", mobile: "8011223344", designation: "Developer", skill: "JavaScript", exp: "3 years", qualification: "B.Tech", state: "Karnataka", city: "Bengaluru", start: "2025-08-01" },
+        { id: "GMS101", name: "Asha Kumar", role: "Manager", gender: "Female", email: "asha.k@example.com", mobile: "8011223344", designation: "Developer", skill: "JavaScript", exp: "3 years", qualification: "B.Tech", state: "Karnataka", city: "Bengaluru", start: "2025-08-01" },
         { id: "GMS102", name: "Rahul Shah", role: "Trainer", gender: "Male", email: "rahul.s@example.com", mobile: "8122334455", designation: "QA", skill: "Selenium", exp: "2 years", qualification: "B.Sc", state: "Maharashtra", city: "Mumbai", start: "2025-07-22" },
-        { id: "GMS103", name: "Ishita Bose", role: "Trainer", gender: "Female", email: "ishita.b@example.com", mobile: "8233445566", designation: "Analyst", skill: "SQL", exp: "4 years", qualification: "MCA", state: "WB", city: "Kolkata", start: "2025-06-15" },
+        { id: "GMS103", name: "Ishita Bose", role: "Pod Lead", gender: "Female", email: "ishita.b@example.com", mobile: "8233445566", designation: "Analyst", skill: "SQL", exp: "4 years", qualification: "MCA", state: "WB", city: "Kolkata", start: "2025-06-15" },
         { id: "GMS104", name: "Vikram Patel", role: "Trainer", gender: "Male", email: "vikram.p@example.com", mobile: "8344556677", designation: "Developer", skill: "C#", exp: "5 years", qualification: "B.E", state: "Gujarat", city: "Ahmedabad", start: "2025-05-05" },
         { id: "GMS105", name: "Neha Das", role: "Reviewer", gender: "Female", email: "neha.d@example.com", mobile: "8455667788", designation: "Sr. Dev", skill: "React", exp: "6 years", qualification: "B.Tech", state: "Delhi", city: "New Delhi", start: "2025-04-18" },
-        { id: "GMS106", name: "Ankit Verma", role: "Reviewer", gender: "Male", email: "ankit.v@example.com", mobile: "8566778899", designation: "Architect", skill: "Azure", exp: "8 years", qualification: "M.Tech", state: "UP", city: "Noida", start: "2025-03-08" },
+        { id: "GMS106", name: "Ankit Verma", role: "Lead", gender: "Male", email: "ankit.v@example.com", mobile: "8566778899", designation: "Architect", skill: "Azure", exp: "8 years", qualification: "M.Tech", state: "UP", city: "Noida", start: "2025-03-08" },
         { id: "GMS107", name: "Zoya Khan", role: "Trainer", gender: "Female", email: "zoya.k@example.com", mobile: "8677889900", designation: "Developer", skill: "Node.js", exp: "3 years", qualification: "BCA", state: "Telangana", city: "Hyderabad", start: "2025-07-12" },
         { id: "GMS108", name: "Arjun Menon", role: "Reviewer", gender: "Male", email: "arjun.m@example.com", mobile: "8788990011", designation: "Lead QA", skill: "Cypress", exp: "7 years", qualification: "B.Tech", state: "Kerala", city: "Kochi", start: "2025-01-30" },
-        { id: "GMS109", name: "Priya Singh", role: "Trainer", gender: "Female", email: "priya.s@example.com", mobile: "8899001122", designation: "Analyst", skill: "Power BI", exp: "2 years", qualification: "MBA", state: "Rajasthan", city: "Jaipur", start: "2025-08-19" },
+        { id: "GMS109", name: "Priya Singh", role: "Lead", gender: "Female", email: "priya.s@example.com", mobile: "8899001122", designation: "Analyst", skill: "Power BI", exp: "2 years", qualification: "MBA", state: "Rajasthan", city: "Jaipur", start: "2025-08-19" },
         { id: "GMS110", name: "Rohan Iyer", role: "Reviewer", gender: "Male", email: "rohan.i@example.com", mobile: "9001122334", designation: "Dev Lead", skill: ".NET", exp: "9 years", qualification: "B.E", state: "TN", city: "Chennai", start: "2024-12-11" },
         { id: "GMS111", name: "Meera Nair", role: "Trainer", gender: "Female", email: "meera.n@example.com", mobile: "9112233445", designation: "Developer", skill: "Angular", exp: "4 years", qualification: "M.Sc", state: "Kerala", city: "Trivandrum", start: "2025-06-01" },
-        { id: "GMS112", name: "Sanjay Patel", role: "Reviewer", gender: "Male", email: "sanjay.p@example.com", mobile: "9223344556", designation: "Architect", skill: "GCP", exp: "10 years", qualification: "B.Tech", state: "Maharashtra", city: "Pune", start: "2024-11-20" },
+        { id: "GMS112", name: "Sanjay Patel", role: "Pod Lead", gender: "Male", email: "sanjay.p@example.com", mobile: "9223344556", designation: "Architect", skill: "GCP", exp: "10 years", qualification: "B.Tech", state: "Maharashtra", city: "Pune", start: "2024-11-20" },
     ];
 
     // Normalize rows so missing keys default to ""
@@ -115,6 +115,9 @@ export default function ResourceList() {
         let d = [...rows];
         if (roleTab === "Trainer") d = d.filter(r => r.role === "Trainer");
         if (roleTab === "Reviewers") d = d.filter(r => r.role === "Reviewer");
+        if (roleTab === "Manager") d = d.filter(r => r.role === "Manager");
+        if (roleTab === "Pod Lead") d = d.filter(r => r.role === "Pod Lead");
+        if (roleTab === "Lead") d = d.filter(r => r.role === "Lead");
         if (q.trim()) {
             const qq = q.trim().toLowerCase();
             d = d.filter(r =>
@@ -163,20 +166,40 @@ export default function ResourceList() {
 
                             <div className="btn-group" role="group" aria-label="role filter">
                                 <button type="button"
-                                    className={"btn btn-outline-secondary " + (roleTab === "Reviewers" ? "active" : "")}
+                                    className={"btn btn-outline-primary " + (roleTab === "All" ? "active" : "")}
+                                    onClick={() => setRoleTab("All")}>
+                                    All
+                                </button>
+                                <button type="button"
+                                    className={"btn btn-outline-primary " + (roleTab === "Manager" ? "active" : "")}
+                                    onClick={() => setRoleTab("Manager")}>
+                                    Managers
+                                </button>
+                                <button type="button"
+                                    className={"btn btn-outline-primary " + (roleTab === "Pod Lead" ? "active" : "")}
+                                    onClick={() => setRoleTab("Pod Lead")}>
+                                    Pod Leads
+                                </button>
+                                <button type="button"
+                                    className={"btn btn-outline-primary " + (roleTab === "Lead" ? "active" : "")}
+                                    onClick={() => setRoleTab("Lead")}>
+                                    Leads
+                                </button>
+                                <button type="button"
+                                    className={"btn btn-outline-primary " + (roleTab === "Reviewers" ? "active" : "")}
                                     onClick={() => setRoleTab("Reviewers")}>
                                     Reviewers
                                 </button>
                                 <button type="button"
-                                    className={"btn btn-outline-secondary " + (roleTab === "Trainer" ? "active" : "")}
+                                    className={"btn btn-outline-primary " + (roleTab === "Trainer" ? "active" : "")}
                                     onClick={() => setRoleTab("Trainer")}>
-                                    Trainer
+                                    Trainers
                                 </button>
                             </div>
 
-                            <button type="button" className="btn btn-outline-secondary btn-sm ms-2" onClick={clearFilters}>
+                            {/* <button type="button" className="btn btn-outline-secondary btn-sm ms-2" onClick={clearFilters}>
                                 <i className="bi bi-x-circle me-1" /> Clear
-                            </button>
+                            </button> */}
                         </div>
 
                         <div className="right">
@@ -211,7 +234,8 @@ export default function ResourceList() {
                                 {filtered.map(r => (
                                     <tr key={r.id}>
                                         <td className="text-muted">{r.id}</td>
-                                        <td className="fw-semibold"><a href="#0" className="name-link">{r.name}</a></td>
+                                        {/* <td className="fw-semibold"><a href="#0" className="name-link">{r.name}</a></td> */}
+                                        <td className="fw-semibold">{r.name}</td>
                                         <td>{r.role}</td>
                                         <td>{r.gender}</td>
                                         <td className="email-cell"><span>{r.email}</span></td>
