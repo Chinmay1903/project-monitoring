@@ -2,7 +2,7 @@ import axios from "axios";
 
 const BASE_URL = import.meta?.env?.VITE_API_BASE_URL
   || process.env.REACT_APP_API_BASE_URL
-  || "localhost:3000"; // fallback
+  || "http://localhost:8000/"; // fallback
 
 const http = axios.create({
   baseURL: BASE_URL,
