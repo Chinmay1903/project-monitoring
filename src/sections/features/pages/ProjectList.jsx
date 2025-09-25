@@ -129,7 +129,7 @@ export default function ProjectList() {
         <AppLayout>
             <div className="projects-page">
                 <div className="projects-actions d-flex justify-content-end">
-                    <button className="1btn btn-primary" onClick={onAddClick} title="Add Project">
+                    <button className="btn btn-primary" onClick={onAddClick} title="Add Project">
                         <i className="bi bi-plus-lg" />
                     </button>
                 </div>
@@ -153,12 +153,12 @@ export default function ProjectList() {
                             </div>
 
                             <select className="form-select filter-item" value={fManager} onChange={(e) => setFManager(e.target.value)}>
-                                <option>All Managers</option>
+                                <option>All GMS Managers</option>
                                 {managers.map(m => <option key={m}>{m}</option>)}
                             </select>
 
                             <select className="form-select filter-item" value={fLead} onChange={(e) => setFLead(e.target.value)}>
-                                <option>All Leads</option>
+                                <option>All Turing Manager</option>
                                 {leads.map(m => <option key={m}>{m}</option>)}
                             </select>
 
@@ -183,8 +183,8 @@ export default function ProjectList() {
                                 <tr>
                                     <Th label="ID" k="id" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                                     <Th label="Project Name" k="name" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                                    <Th label="Manager" k="manager" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                                    <Th label="Lead" k="lead" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                                    <Th label="Gms Manager" k="manager" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                                    <Th label="Turing Manager" k="lead" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                                     <Th label="Pod Lead" k="podLead" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                                     <Th label="Trainer" k="trainer" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                                     <Th label="Start Date" k="start" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
