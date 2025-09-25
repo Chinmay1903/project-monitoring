@@ -1,8 +1,64 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import AppLayout from "../components/AppLayout";
 import "./ResourceList.css";
+import { getRoles, getEmployees, addEmployee, updateEmployee, deleteEmployee } from "../../../api/features";
 
 export default function ResourceList() {
+    const [roles, setRoles] = useState([]); 
+    const [roleFilter, setRoleFilter] = useState(["All"]); // Initialize with "All"
+    const [rows, setRows] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // Add this useEffect to fetch roles when component mounts
+    useEffect(() => {
+        const fetchRoles = async () => {
+            try {
+                const rolesData = await getRoles();
+                console.log("Fetched roles:", rolesData);
+                setRoles(rolesData.data || []);
+                const roleNames = rolesData.data.map(role => role.role_name);
+                setRoleFilter(["All", ...roleNames ]); // Add "All" to beginning of roles array
+                console.log("Fetched roles:", setRoleFilter, setRoles);
+            } catch (error) {
+                console.error("Error fetching roles:", error);
+            }
+        };
+        
+        const fetchEmployees = async () => {
+            try {
+                setLoading(true);
+                const response = await getEmployees();
+                const employeeData = response.data.map(emp => ({
+                    ...emptyForm,  // Use default values for missing fields
+                    id: emp.employees_id,
+                    name: (emp.first_name ? emp.first_name : '') + (emp.last_name ? ` ${emp.last_name}` : ''),
+                    role: emp.role,
+                    roleName: emp.role_name,
+                    gender: emp.gender,
+                    email: emp.email,
+                    mobile: emp.phone,
+                    designation: emp.designation,
+                    skill: emp.skill,
+                    exp: emp.experience,
+                    qualification: emp.qualification,
+                    state: emp.state,
+                    city: emp.city,
+                    start: emp.create_at?.split(' ')[0] || '', // Take only the date part
+                }));
+                setRows(employeeData);
+            } catch (error) {
+                console.error("Error fetching employees:", error);
+                setError("Failed to load employees");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchRoles();
+        fetchEmployees();
+    }, []);
+
     // ---------- defaults for ALL fields ----------
     const emptyForm = {
         id: "",
@@ -20,29 +76,10 @@ export default function ResourceList() {
         start: "",
     };
 
-    // ---------- demo rows (include qualification/state/city) ----------
-    const seed = [
-        { id: "GMS101", name: "Asha Kumar", role: "Manager", gender: "Female", email: "asha.k@example.com", mobile: "8011223344", designation: "Developer", skill: "JavaScript", exp: "3 years", qualification: "B.Tech", state: "Karnataka", city: "Bengaluru", start: "2025-08-01" },
-        { id: "GMS102", name: "Rahul Shah", role: "Trainer", gender: "Male", email: "rahul.s@example.com", mobile: "8122334455", designation: "QA", skill: "Selenium", exp: "2 years", qualification: "B.Sc", state: "Maharashtra", city: "Mumbai", start: "2025-07-22" },
-        { id: "GMS103", name: "Ishita Bose", role: "Pod Lead", gender: "Female", email: "ishita.b@example.com", mobile: "8233445566", designation: "Analyst", skill: "SQL", exp: "4 years", qualification: "MCA", state: "WB", city: "Kolkata", start: "2025-06-15" },
-        { id: "GMS104", name: "Vikram Patel", role: "Trainer", gender: "Male", email: "vikram.p@example.com", mobile: "8344556677", designation: "Developer", skill: "C#", exp: "5 years", qualification: "B.E", state: "Gujarat", city: "Ahmedabad", start: "2025-05-05" },
-        { id: "GMS105", name: "Neha Das", role: "Reviewer", gender: "Female", email: "neha.d@example.com", mobile: "8455667788", designation: "Sr. Dev", skill: "React", exp: "6 years", qualification: "B.Tech", state: "Delhi", city: "New Delhi", start: "2025-04-18" },
-        { id: "GMS106", name: "Ankit Verma", role: "Lead", gender: "Male", email: "ankit.v@example.com", mobile: "8566778899", designation: "Architect", skill: "Azure", exp: "8 years", qualification: "M.Tech", state: "UP", city: "Noida", start: "2025-03-08" },
-        { id: "GMS107", name: "Zoya Khan", role: "Trainer", gender: "Female", email: "zoya.k@example.com", mobile: "8677889900", designation: "Developer", skill: "Node.js", exp: "3 years", qualification: "BCA", state: "Telangana", city: "Hyderabad", start: "2025-07-12" },
-        { id: "GMS108", name: "Arjun Menon", role: "Reviewer", gender: "Male", email: "arjun.m@example.com", mobile: "8788990011", designation: "Lead QA", skill: "Cypress", exp: "7 years", qualification: "B.Tech", state: "Kerala", city: "Kochi", start: "2025-01-30" },
-        { id: "GMS109", name: "Priya Singh", role: "Lead", gender: "Female", email: "priya.s@example.com", mobile: "8899001122", designation: "Analyst", skill: "Power BI", exp: "2 years", qualification: "MBA", state: "Rajasthan", city: "Jaipur", start: "2025-08-19" },
-        { id: "GMS110", name: "Rohan Iyer", role: "Reviewer", gender: "Male", email: "rohan.i@example.com", mobile: "9001122334", designation: "Dev Lead", skill: ".NET", exp: "9 years", qualification: "B.E", state: "TN", city: "Chennai", start: "2024-12-11" },
-        { id: "GMS111", name: "Meera Nair", role: "Trainer", gender: "Female", email: "meera.n@example.com", mobile: "9112233445", designation: "Developer", skill: "Angular", exp: "4 years", qualification: "M.Sc", state: "Kerala", city: "Trivandrum", start: "2025-06-01" },
-        { id: "GMS112", name: "Sanjay Patel", role: "Pod Lead", gender: "Male", email: "sanjay.p@example.com", mobile: "9223344556", designation: "Architect", skill: "GCP", exp: "10 years", qualification: "B.Tech", state: "Maharashtra", city: "Pune", start: "2024-11-20" },
-    ];
-
-    // Normalize rows so missing keys default to ""
-    const [rows, setRows] = useState(() => seed.map(r => ({ ...emptyForm, ...r })));
-
     // ---------- filters ----------
     const [roleTab, setRoleTab] = useState("All"); // All | Reviewers | Trainer
     const [q, setQ] = useState("");
-    const clearFilters = () => { setRoleTab("All"); setQ(""); };
+    // const clearFilters = () => { setRoleTab("All"); setQ(""); };
 
     // ---------- sort ----------
     const [sortKey, setSortKey] = useState("name");
@@ -77,8 +114,20 @@ export default function ResourceList() {
         setMode("edit"); setSubmitted(false); setShowModal(true);
     };
 
-    const onDelete = (id) => {
-        if (window.confirm("Delete this resource?")) setRows(prev => prev.filter(r => r.id !== id));
+    const onDelete = async(id) => {
+        if (window.confirm("Delete this resource?")) {
+        try {
+            const response = await deleteEmployee(id);
+            console.log("Delete response:", response);
+            
+            if (response.data) {
+                setRows(prev => prev.filter(r => r.id !== id));
+            }
+        } catch (error) {
+            console.error("Error deleting employee:", error);
+            alert("Failed to delete employee. Please try again.");
+        }
+    }
     };
 
     // ---------- validation ----------
@@ -86,6 +135,7 @@ export default function ResourceList() {
     const mobileOk = (v) => /^[0-9]{10,12}$/.test(v || "");
     const errors = useMemo(() => {
         const e = {};
+        if (!form.id) e.id = "ID is required.";
         if (!form.role) e.role = "Role is required.";
         if (!form.gender) e.gender = "Gender is required.";
         if (!form.name.trim()) e.name = "Name is required.";
@@ -101,23 +151,72 @@ export default function ResourceList() {
     }, [form]);
     const isValid = Object.keys(errors).length === 0;
 
-    const onSave = (e) => {
+    const onSave = async (e) => {
         e.preventDefault();
         setSubmitted(true);
         if (!isValid) return;
-        if (mode === "add") setRows(prev => [{ ...form }, ...prev]);
-        else setRows(prev => prev.map(r => r.id === form.id ? { ...r, ...form } : r));
-        setShowModal(false);
+        const nameParts = form.name.split(' ');
+        const lastName = nameParts.length > 1 ? nameParts.pop() : ''; // Get last word
+        const firstName = nameParts.join(' '); // Join remaining words
+        try {
+            if (mode === "add") {
+                const response = await addEmployee({
+                    employees_id: form.id,
+                    first_name: firstName,
+                    last_name: lastName,
+                    role: form.role,
+                    role_name: roles.find(r => r.role_id === form.role)?.role_name || "",
+                    gender: form.gender,
+                    email: form.email,
+                    phone: form.mobile,
+                    designation: form.designation,
+                    skill: form.skill,
+                    experience: form.exp,
+                    qualification: form.qualification,
+                    state: form.state,
+                    city: form.city,
+                    status: "1",
+                    create_at: form.start,
+                });
+
+                if (response.data) {
+                    setRows(prev => [{ ...form }, ...prev]);
+                    setShowModal(false);
+                }
+            } else {
+                const response = await updateEmployee(form.id, {
+                    first_name: firstName,
+                    last_name: lastName,
+                    role: form.role,
+                    gender: form.gender,
+                    email: form.email,
+                    phone: form.mobile,
+                    designation: form.designation,
+                    skill: form.skill,
+                    experience: form.exp,
+                    qualification: form.qualification,
+                    state: form.state,
+                    city: form.city,
+                    status: "1"
+                });
+
+                if (response.data) {
+                    setRows(prev => prev.map(r => r.id === form.id ? { ...r, ...form } : r));
+                    setShowModal(false);
+                }
+            }
+        } catch (error) {
+            console.error("Error saving employee:", error);
+            alert("Failed to save employee. Please try again.");
+        }
     };
 
     // ---------- derived ----------
     const filtered = useMemo(() => {
         let d = [...rows];
-        if (roleTab === "Trainer") d = d.filter(r => r.role === "Trainer");
-        if (roleTab === "Reviewers") d = d.filter(r => r.role === "Reviewer");
-        if (roleTab === "Manager") d = d.filter(r => r.role === "Manager");
-        if (roleTab === "Pod Lead") d = d.filter(r => r.role === "Pod Lead");
-        if (roleTab === "Lead") d = d.filter(r => r.role === "Lead");
+        if (roleTab !== "All") {
+            d = d.filter(r => r.roleName === roleTab);
+        }
         if (q.trim()) {
             const qq = q.trim().toLowerCase();
             d = d.filter(r =>
@@ -150,6 +249,32 @@ export default function ResourceList() {
     };
 
     // ---------- view ----------
+    if (loading) {
+        return (
+            <AppLayout>
+                <div className="resources-page">
+                    <div className="text-center py-4">
+                        <div className="spinner-border text-primary" role="status">
+                            <span className="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </AppLayout>
+        );
+    }
+
+    if (error) {
+        return (
+            <AppLayout>
+                <div className="resources-page">
+                    <div className="alert alert-danger" role="alert">
+                        {error}
+                    </div>
+                </div>
+            </AppLayout>
+        );
+    }
+
     return (
         <AppLayout>
             <div className="resources-page">
@@ -165,36 +290,15 @@ export default function ResourceList() {
                             <span className="title">Resources</span>
 
                             <div className="btn-group" role="group" aria-label="role filter">
-                                <button type="button"
-                                    className={"btn btn-outline-primary " + (roleTab === "All" ? "active" : "")}
-                                    onClick={() => setRoleTab("All")}>
-                                    All
-                                </button>
-                                <button type="button"
-                                    className={"btn btn-outline-primary " + (roleTab === "Manager" ? "active" : "")}
-                                    onClick={() => setRoleTab("Manager")}>
-                                    Managers
-                                </button>
-                                <button type="button"
-                                    className={"btn btn-outline-primary " + (roleTab === "Pod Lead" ? "active" : "")}
-                                    onClick={() => setRoleTab("Pod Lead")}>
-                                    Pod Leads
-                                </button>
-                                <button type="button"
-                                    className={"btn btn-outline-primary " + (roleTab === "Lead" ? "active" : "")}
-                                    onClick={() => setRoleTab("Lead")}>
-                                    Leads
-                                </button>
-                                <button type="button"
-                                    className={"btn btn-outline-primary " + (roleTab === "Reviewers" ? "active" : "")}
-                                    onClick={() => setRoleTab("Reviewers")}>
-                                    Reviewers
-                                </button>
-                                <button type="button"
-                                    className={"btn btn-outline-primary " + (roleTab === "Trainer" ? "active" : "")}
-                                    onClick={() => setRoleTab("Trainer")}>
-                                    Trainers
-                                </button>
+                                {roleFilter.map(role => (
+                                    <button
+                                        key={role}
+                                        type="button"
+                                        className={`btn btn-outline-primary ${roleTab === role ? "active" : ""}`}
+                                        onClick={() => setRoleTab(role)}>
+                                        {role === "All" ? "All" : `${role}s`}
+                                    </button>
+                                ))}
                             </div>
 
                             {/* <button type="button" className="btn btn-outline-secondary btn-sm ms-2" onClick={clearFilters}>
@@ -225,7 +329,7 @@ export default function ResourceList() {
                                     <Th label="Mobile" k="mobile" />
                                     <Th label="Designation" k="designation" />
                                     <Th label="Skill" k="skill" />
-                                    <Th label="Exp" k="exp" />
+                                    <Th label="Experience" k="exp" />
                                     <Th label="Start Date" k="start" />
                                     <th style={{ width: 110 }} className="text-end">Actions</th>
                                 </tr>
@@ -236,7 +340,7 @@ export default function ResourceList() {
                                         <td className="text-muted">{r.id}</td>
                                         {/* <td className="fw-semibold"><a href="#0" className="name-link">{r.name}</a></td> */}
                                         <td className="fw-semibold">{r.name}</td>
-                                        <td>{r.role}</td>
+                                        <td>{r.roleName}</td>
                                         <td>{r.gender}</td>
                                         <td className="email-cell"><span>{r.email}</span></td>
                                         <td>{r.mobile}</td>
@@ -280,31 +384,31 @@ export default function ResourceList() {
                                             <div className="container-fluid">
                                                 <div className="row g-3">
                                                     <div className="col-12 col-md-6">
+                                                        <label className="form-label">GMS ID <span className="text-danger">*</span></label>
+                                                        <input className={`form-control ${submitted && errors.id ? "is-invalid" : ""}`}
+                                                            placeholder="GMS ID"
+                                                            value={form.id}
+                                                            disabled={mode === "edit"}
+                                                            onChange={(e) => setForm({ ...form, id: e.target.value })} />
+                                                        {submitted && errors.id && <div className="invalid-feedback">{errors.id}</div>}
+                                                    </div>
+
+                                                    <div className="col-12 col-md-6">
                                                         <label className="form-label">Role <span className="text-danger">*</span></label>
                                                         <select className={`form-select ${submitted && errors.role ? "is-invalid" : ""}`}
                                                             value={form.role}
                                                             onChange={e => setForm({ ...form, role: e.target.value })}>
                                                             <option value="">Select role</option>
-                                                            <option>Trainer</option>
-                                                            <option>Reviewer</option>
+                                                            {roles.map(role => (
+                                                                <option key={role.role_id} value={role.role_id}>
+                                                                    {role.role_name}
+                                                                </option>
+                                                            ))}
                                                         </select>
                                                         {submitted && errors.role && <div className="invalid-feedback">{errors.role}</div>}
                                                     </div>
 
-                                                    <div className="col-12 col-md-6">
-                                                        <label className="form-label">Gender <span className="text-danger">*</span></label>
-                                                        <select className={`form-select ${submitted && errors.gender ? "is-invalid" : ""}`}
-                                                            value={form.gender}
-                                                            onChange={e => setForm({ ...form, gender: e.target.value })}>
-                                                            <option value="">Select gender</option>
-                                                            <option>Female</option>
-                                                            <option>Male</option>
-                                                            <option>Other</option>
-                                                        </select>
-                                                        {submitted && errors.gender && <div className="invalid-feedback">{errors.gender}</div>}
-                                                    </div>
-
-                                                    <div className="col-12 col-md-4">
+                                                    <div className="col-12 col-md-12">
                                                         <label className="form-label">Name <span className="text-danger">*</span></label>
                                                         <input className={`form-control ${submitted && errors.name ? "is-invalid" : ""}`}
                                                             placeholder="Resource Name"
@@ -313,7 +417,20 @@ export default function ResourceList() {
                                                         {submitted && errors.name && <div className="invalid-feedback">{errors.name}</div>}
                                                     </div>
 
-                                                    <div className="col-12 col-md-4">
+                                                    <div className="col-12 col-md-6">
+                                                        <label className="form-label">Gender <span className="text-danger">*</span></label>
+                                                        <select className={`form-select ${submitted && errors.gender ? "is-invalid" : ""}`}
+                                                            value={form.gender}
+                                                            onChange={e => setForm({ ...form, gender: e.target.value })}>
+                                                            <option value="">Select gender</option>
+                                                            <option value="Female">Female</option>
+                                                            <option value="Male">Male</option>
+                                                            <option value="Other">Other</option>
+                                                        </select>
+                                                        {submitted && errors.gender && <div className="invalid-feedback">{errors.gender}</div>}
+                                                    </div>
+
+                                                    <div className="col-12 col-md-6">
                                                         <label className="form-label">Email <span className="text-danger">*</span></label>
                                                         <input className={`form-control ${submitted && errors.email ? "is-invalid" : ""}`}
                                                             placeholder="resource@example.com"

@@ -52,6 +52,31 @@ export const getManagerNames = async () => {
   };
 };
 
+export const addEmployee = async (employee) => {
+  const res = await http.post("/employees", employee);
+  console.log(res);
+
+  const data = res?.data;
+  const ok = res.status === 200 && data?.message === "Employee added successfully";
+  return {
+    ok,
+    message: data?.message || (ok ? "Employee added successfully" : "Failed to add employee"),
+    data: data,
+  };
+};
+
+export const updateEmployee = async (id, employee) => {
+  const res = await http.put(`/employees/${id}`, employee);
+  console.log(res);
+    const data = res?.data;
+    const ok = res.status === 200 && data?.message === "Employee updated successfully";
+    return {
+      ok,
+      message: data?.message || (ok ? "Employee updated successfully" : "Failed to update employee"),
+      data: data,
+    };
+};
+
 export const deleteEmployee = async (id) => {
   const res = await http.delete(`/employees/${id}`);
   console.log(res);
