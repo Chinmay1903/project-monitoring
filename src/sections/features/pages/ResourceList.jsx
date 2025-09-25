@@ -281,7 +281,6 @@ export default function ResourceList() {
                 <div className="resources-actions d-flex justify-content-end">
                     <button className="btn btn-primary" onClick={onAdd}>
                         <i className="bi bi-plus-lg me-1" />
-                        Add User
                     </button>
                 </div>
                 <div className="resources-card card shadow-sm">
@@ -375,7 +374,7 @@ export default function ResourceList() {
                             <div className="modal-dialog modal-xl modal-dialog-centered">
                                 <div className="modal-content">
                                     <div className="modal-header">
-                                        <h5 className="modal-title">{mode === "add" ? "Add User" : "Edit User"}</h5>
+                                        <h5 className="modal-title">{mode === "add" ? "Add Resource" : "Edit Resource"}</h5>
                                         <button type="button" className="btn-close" aria-label="Close" onClick={() => setShowModal(false)} />
                                     </div>
 
