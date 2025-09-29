@@ -4,35 +4,35 @@ import "./ResourceList.css";
 import { getRoles, getEmployees, addEmployee, updateEmployee, deleteEmployee } from "../../../api/features";
 
 export default function ResourceList() {
-    const [roles, setRoles] = useState([]); 
-    const [roleFilter, setRoleFilter] = useState(["All"]); // Initialize with "All"
+    const [roles, setRoles] = useState([]);
+    const [roleFilter, setRoleFilter] = useState(["All"]);
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Add this useEffect to fetch roles when component mounts
+    // ---------- defaults ----------
+    const emptyForm = {
+        id: "", name: "", role: "", gender: "", email: "", mobile: "",
+        designation: "", skill: "", exp: "", qualification: "",
+        state: "", city: "", start: ""
+    };
+
+    // ---------- fetch ----------
     useEffect(() => {
-        const fetchRoles = async () => {
+        (async () => {
             try {
-                const rolesData = await getRoles();
-                console.log("Fetched roles:", rolesData);
-                setRoles(rolesData.data || []);
-                const roleNames = rolesData.data.map(role => role.role_name);
-                setRoleFilter(["All", ...roleNames ]); // Add "All" to beginning of roles array
-                console.log("Fetched roles:", setRoleFilter, setRoles);
-            } catch (error) {
-                console.error("Error fetching roles:", error);
-            }
-        };
-        
-        const fetchEmployees = async () => {
+                const roleRes = await getRoles();
+                const list = roleRes?.data || [];
+                setRoles(list);
+                setRoleFilter(["All", ...list.map(r => r.role_name)]);
+            } catch (e) { console.error("roles", e); }
             try {
                 setLoading(true);
-                const response = await getEmployees();
-                const employeeData = response.data.map(emp => ({
-                    ...emptyForm,  // Use default values for missing fields
+                const resp = await getEmployees();
+                const data = (resp?.data || []).map(emp => ({
+                    ...emptyForm,
                     id: emp.employees_id,
-                    name: (emp.first_name ? emp.first_name : '') + (emp.last_name ? ` ${emp.last_name}` : ''),
+                    name: (emp.first_name || "") + (emp.last_name ? ` ${emp.last_name}` : ""),
                     role: emp.role,
                     roleName: emp.role_name,
                     gender: emp.gender,
@@ -44,42 +44,20 @@ export default function ResourceList() {
                     qualification: emp.qualification,
                     state: emp.state,
                     city: emp.city,
-                    start: emp.create_at?.split(' ')[0] || '', // Take only the date part
+                    start: emp.create_at?.split(" ")[0] || "",
                 }));
-                setRows(employeeData);
-            } catch (error) {
-                console.error("Error fetching employees:", error);
+                setRows(data);
+            } catch (e) {
+                console.error("employees", e);
                 setError("Failed to load employees");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchRoles();
-        fetchEmployees();
+            } finally { setLoading(false); }
+        })();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // ---------- defaults for ALL fields ----------
-    const emptyForm = {
-        id: "",
-        name: "",
-        role: "",
-        gender: "",
-        email: "",
-        mobile: "",
-        designation: "",
-        skill: "",
-        exp: "",
-        qualification: "",
-        state: "",
-        city: "",
-        start: "",
-    };
-
     // ---------- filters ----------
-    const [roleTab, setRoleTab] = useState("All"); // All | Reviewers | Trainer
+    const [roleTab, setRoleTab] = useState("All");
     const [q, setQ] = useState("");
-    // const clearFilters = () => { setRoleTab("All"); setQ(""); };
 
     // ---------- sort ----------
     const [sortKey, setSortKey] = useState("name");
@@ -99,7 +77,8 @@ export default function ResourceList() {
     const ddmmyyyy = `${todayYMD.slice(8, 10)}/${todayYMD.slice(5, 7)}/${todayYMD.slice(0, 4)}`;
 
     const nextId = () => {
-        const max = rows.reduce((acc, r) => Math.max(acc, parseInt(r.id.replace("GMS", ""), 10)), 0);
+        const max = rows.reduce((acc, r) =>
+            Math.max(acc, parseInt(String(r.id || "").replace("GMS", ""), 10) || 0), 0);
         return `GMS${String(max + 1).padStart(3, "0")}`;
     };
 
@@ -107,32 +86,18 @@ export default function ResourceList() {
         setForm({ ...emptyForm, id: nextId(), start: todayYMD });
         setMode("add"); setSubmitted(false); setShowModal(true);
     };
-
-    const onEdit = (r) => {
-        // <-- KEY FIX: merge with emptyForm so any missing keys get defaults
-        setForm({ ...emptyForm, ...r });
-        setMode("edit"); setSubmitted(false); setShowModal(true);
-    };
-
-    const onDelete = async(id) => {
-        if (window.confirm("Delete this resource?")) {
+    const onEdit = (r) => { setForm({ ...emptyForm, ...r }); setMode("edit"); setSubmitted(false); setShowModal(true); };
+    const onDelete = async (id) => {
+        if (!window.confirm("Delete this resource?")) return;
         try {
-            const response = await deleteEmployee(id);
-            console.log("Delete response:", response);
-            
-            if (response.data) {
-                setRows(prev => prev.filter(r => r.id !== id));
-            }
-        } catch (error) {
-            console.error("Error deleting employee:", error);
-            alert("Failed to delete employee. Please try again.");
-        }
-    }
+            const res = await deleteEmployee(id);
+            if (res?.data) setRows(prev => prev.filter(x => x.id !== id));
+        } catch (e) { console.error(e); alert("Failed to delete employee. Please try again."); }
     };
 
     // ---------- validation ----------
-    const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v || "");
-    const mobileOk = (v) => /^[0-9]{10,12}$/.test(v || "");
+    const emailOk = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v || "");
+    const mobileOk = v => /^[0-9]{10,12}$/.test(v || "");
     const errors = useMemo(() => {
         const e = {};
         if (!form.id) e.id = "ID is required.";
@@ -155,68 +120,37 @@ export default function ResourceList() {
         e.preventDefault();
         setSubmitted(true);
         if (!isValid) return;
-        const nameParts = form.name.split(' ');
-        const lastName = nameParts.length > 1 ? nameParts.pop() : ''; // Get last word
-        const firstName = nameParts.join(' '); // Join remaining words
+        const parts = form.name.split(" ");
+        const last = parts.length > 1 ? parts.pop() : "";
+        const first = parts.join(" ");
         try {
             if (mode === "add") {
-                const response = await addEmployee({
-                    employees_id: form.id,
-                    first_name: firstName,
-                    last_name: lastName,
+                const res = await addEmployee({
+                    employees_id: form.id, first_name: first, last_name: last,
                     role: form.role,
                     role_name: roles.find(r => r.role_id === form.role)?.role_name || "",
-                    gender: form.gender,
-                    email: form.email,
-                    phone: form.mobile,
-                    designation: form.designation,
-                    skill: form.skill,
-                    experience: form.exp,
-                    qualification: form.qualification,
-                    state: form.state,
-                    city: form.city,
-                    status: "1",
-                    create_at: form.start,
+                    gender: form.gender, email: form.email, phone: form.mobile,
+                    designation: form.designation, skill: form.skill, experience: form.exp,
+                    qualification: form.qualification, state: form.state, city: form.city,
+                    status: "1", create_at: form.start,
                 });
-
-                if (response.data) {
-                    setRows(prev => [{ ...form }, ...prev]);
-                    setShowModal(false);
-                }
+                if (res?.data) { setRows(prev => [{ ...form }, ...prev]); setShowModal(false); }
             } else {
-                const response = await updateEmployee(form.id, {
-                    first_name: firstName,
-                    last_name: lastName,
-                    role: form.role,
-                    gender: form.gender,
-                    email: form.email,
-                    phone: form.mobile,
-                    designation: form.designation,
-                    skill: form.skill,
-                    experience: form.exp,
-                    qualification: form.qualification,
-                    state: form.state,
-                    city: form.city,
-                    status: "1"
+                const res = await updateEmployee(form.id, {
+                    first_name: first, last_name: last, role: form.role, gender: form.gender,
+                    email: form.email, phone: form.mobile, designation: form.designation,
+                    skill: form.skill, experience: form.exp, qualification: form.qualification,
+                    state: form.state, city: form.city, status: "1",
                 });
-
-                if (response.data) {
-                    setRows(prev => prev.map(r => r.id === form.id ? { ...r, ...form } : r));
-                    setShowModal(false);
-                }
+                if (res?.data) { setRows(prev => prev.map(r => r.id === form.id ? { ...r, ...form } : r)); setShowModal(false); }
             }
-        } catch (error) {
-            console.error("Error saving employee:", error);
-            alert("Failed to save employee. Please try again.");
-        }
+        } catch (err) { console.error(err); alert("Failed to save employee. Please try again."); }
     };
 
     // ---------- derived ----------
     const filtered = useMemo(() => {
         let d = [...rows];
-        if (roleTab !== "All") {
-            d = d.filter(r => r.roleName === roleTab);
-        }
+        if (roleTab !== "All") d = d.filter(r => r.roleName === roleTab);
         if (q.trim()) {
             const qq = q.trim().toLowerCase();
             d = d.filter(r =>
@@ -235,15 +169,15 @@ export default function ResourceList() {
         return d;
     }, [rows, roleTab, q, sortKey, sortDir]);
 
-    // ---------- tiny header cell helper ----------
+    // ---------- header cell ----------
     const Th = ({ label, k }) => {
         const active = sortKey === k;
+        const icon = active ? (sortDir === "asc" ? "bi-caret-up-fill" : "bi-caret-down-fill") : "bi-arrow-down-up";
         return (
-            <th role="button" onClick={() => toggleSort(k)}>
-                <span className="me-1">{label}</span>
-                <span className={"sort " + (active ? sortDir : "")}>
-                    <i className="bi bi-arrow-down-up" />
-                </span>
+            <th className={`sortable ${active ? "active" : ""}`}>
+                <button type="button" className="sort-btn" onClick={() => toggleSort(k)} title={`Sort by ${label}`}>
+                    {label} <i className={`bi ${icon} sort-icon`} />
+                </button>
             </th>
         );
     };
@@ -252,73 +186,75 @@ export default function ResourceList() {
     if (loading) {
         return (
             <AppLayout>
-                <div className="resources-page">
-                    <div className="text-center py-4">
-                        <div className="spinner-border text-primary" role="status">
-                            <span className="visually-hidden">Loading...</span>
-                        </div>
-                    </div>
+                <div className="p-3 text-center">
+                    <div className="spinner-border text-primary" role="status"><span className="visually-hidden">Loading...</span></div>
                 </div>
             </AppLayout>
         );
     }
-
     if (error) {
         return (
             <AppLayout>
-                <div className="resources-page">
-                    <div className="alert alert-danger" role="alert">
-                        {error}
-                    </div>
-                </div>
+                <div className="p-3"><div className="alert alert-danger">{error}</div></div>
             </AppLayout>
         );
     }
 
+    // Display Date as DD-MM-YYYY
+    const toDMY = (ymd) => {
+        if (!ymd) return "";
+        const [y, m, d] = ymd.split("-");
+        return (y && m && d) ? `${d}-${m}-${y}` : ymd;
+    };
+    const toYMD = (dmy) => {
+        if (!dmy) return "";
+        const [d, m, y] = dmy.split("-");
+        return (d && m && y) ? `${y}-${m}-${d}` : dmy;
+    };
+
     return (
         <AppLayout>
-            <div className="resources-page">
-                <div className="resources-actions d-flex justify-content-end">
-                    <button className="btn btn-primary" onClick={onAdd}>
-                        <i className="bi bi-plus-lg me-1" />
+            <div className="rl-scope px-2 py-2">
+                {/* Add button (icon-first) */}
+                <div className="d-flex justify-content-end mb-2">
+                    <button className="btn btn-primary action-btn" onClick={onAdd}>
+                        <i className="bi bi-plus-circle" />
+                        <span className="label">Add User</span>
                     </button>
                 </div>
-                <div className="resources-card card shadow-sm">
-                    <div className="resources-toolbar">
-                        <div className="left">
-                            <span className="title">Resources</span>
 
-                            <div className="btn-group" role="group" aria-label="role filter">
-                                {roleFilter.map(role => (
-                                    <button
-                                        key={role}
-                                        type="button"
-                                        className={`btn btn-outline-primary ${roleTab === role ? "active" : ""}`}
-                                        onClick={() => setRoleTab(role)}>
-                                        {role === "All" ? "All" : `${role}s`}
-                                    </button>
-                                ))}
+                {/* Card */}
+                <div className="card bg-body-tertiary border-3 rounded-3 shadow">
+                    <div className="card-header bg-warning-subtle text-warning-emphasis">
+                        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div className="d-flex align-items-center gap-3 flex-wrap">
+                                <h5 className="mb-0">Resources</h5>
+                                <div className="btn-group" role="group" aria-label="role filter">
+                                    {roleFilter.map((role) => (
+                                        <button
+                                            key={role}
+                                            type="button"
+                                            className={`btn btn-sm ${roleTab === role ? "btn-outline-danger active" : "btn-outline-secondary"}`}
+                                            aria-pressed={roleTab === role}
+                                            onClick={() => setRoleTab(role)}
+                                        >
+                                            {role === "All" ? "All" : role}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
 
-                            {/* <button type="button" className="btn btn-outline-secondary btn-sm ms-2" onClick={clearFilters}>
-                                <i className="bi bi-x-circle me-1" /> Clear
-                            </button> */}
-                        </div>
-
-                        <div className="right">
-                            <div className="input-group search">
-                                <span className="input-group-text"><i className="bi bi-search" /></span>
-                                <input className="form-control"
-                                    placeholder="Search name / id / email"
-                                    value={q}
-                                    onChange={e => setQ(e.target.value)} />
+                            <div className="input-group" style={{ maxWidth: 360 }}>
+                                <span className="input-group-text bg-white"><i className="bi bi-search" /></span>
+                                <input type="text" className="form-control" placeholder="Search name / id / email" value={q} onChange={e => setQ(e.target.value)} />
                             </div>
                         </div>
                     </div>
 
-                    <div className="table-responsive">
-                        <table className="table table-hover resources-table">
-                            <thead>
+                    {/* Table */}
+                    <div className="table-responsive bg-warning-subtle text-warning-emphasis rounded shadow">
+                        <table className="table table-info table-striped-columns table-hover align-middle mb-0 has-actions">
+                            <thead className="table-success">
                                 <tr>
                                     <Th label="ID" k="id" />
                                     <Th label="Name" k="name" />
@@ -328,32 +264,31 @@ export default function ResourceList() {
                                     <Th label="Mobile" k="mobile" />
                                     <Th label="Designation" k="designation" />
                                     <Th label="Skill" k="skill" />
-                                    <Th label="Experience" k="exp" />
+                                    <Th label="Exp" k="exp" />
                                     <Th label="Start Date" k="start" />
-                                    <th style={{ width: 110 }} className="text-end">Actions</th>
+                                    <th className="actions-col">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {filtered.map(r => (
                                     <tr key={r.id}>
                                         <td className="text-muted">{r.id}</td>
-                                        {/* <td className="fw-semibold"><a href="#0" className="name-link">{r.name}</a></td> */}
                                         <td className="fw-semibold">{r.name}</td>
                                         <td>{r.roleName}</td>
-                                        <td>{r.gender}</td>
-                                        <td className="email-cell"><span>{r.email}</span></td>
+                                        <td>{r.gender || "-"}</td>
+                                        <td><span className="text-break d-inline-block" style={{ maxWidth: 220 }}>{r.email}</span></td>
                                         <td>{r.mobile}</td>
                                         <td>{r.designation}</td>
                                         <td>{r.skill}</td>
                                         <td>{r.exp}</td>
                                         <td>{r.start}</td>
-                                        <td className="text-end">
-                                            <div className="btn-group btn-group-sm" role="group">
-                                                <button className="btn btn-outline-secondary" onClick={() => onEdit(r)} title="Edit">
-                                                    <i className="bi bi-pencil-square" />
+                                        <td className="actions-col">
+                                            <div className="action-wrap">
+                                                <button className="btn btn-outline-secondary btn-sm action-btn" onClick={() => onEdit(r)} title="Edit">
+                                                    <i className="bi bi-pencil-square" /><span className="label">Edit</span>
                                                 </button>
-                                                <button className="btn btn-outline-danger" onClick={() => onDelete(r.id)} title="Delete">
-                                                    <i className="bi bi-trash" />
+                                                <button className="btn btn-outline-danger btn-sm action-btn" onClick={() => onDelete(r.id)} title="Delete">
+                                                    <i className="bi bi-trash3" /><span className="label">Delete</span>
                                                 </button>
                                             </div>
                                         </td>
@@ -367,13 +302,13 @@ export default function ResourceList() {
                     </div>
                 </div>
 
-                {/* Add/Edit modal */}
+                {/* Modal */}
                 {showModal && (
                     <>
                         <div className="modal fade show d-block" tabIndex="-1" role="dialog" aria-modal="true">
                             <div className="modal-dialog modal-xl modal-dialog-centered">
                                 <div className="modal-content">
-                                    <div className="modal-header">
+                                    <div className="modal-header border-0 border-bottom">
                                         <h5 className="modal-title">{mode === "add" ? "Add Resource" : "Edit Resource"}</h5>
                                         <button type="button" className="btn-close" aria-label="Close" onClick={() => setShowModal(false)} />
                                     </div>
@@ -388,7 +323,7 @@ export default function ResourceList() {
                                                             placeholder="GMS ID"
                                                             value={form.id}
                                                             disabled={mode === "edit"}
-                                                            onChange={(e) => setForm({ ...form, id: e.target.value })} />
+                                                            onChange={e => setForm({ ...form, id: e.target.value })} />
                                                         {submitted && errors.id && <div className="invalid-feedback">{errors.id}</div>}
                                                     </div>
 
@@ -399,20 +334,18 @@ export default function ResourceList() {
                                                             onChange={e => setForm({ ...form, role: e.target.value })}>
                                                             <option value="">Select role</option>
                                                             {roles.map(role => (
-                                                                <option key={role.role_id} value={role.role_id}>
-                                                                    {role.role_name}
-                                                                </option>
+                                                                <option key={role.role_id} value={role.role_id}>{role.role_name}</option>
                                                             ))}
                                                         </select>
                                                         {submitted && errors.role && <div className="invalid-feedback">{errors.role}</div>}
                                                     </div>
 
-                                                    <div className="col-12 col-md-12">
+                                                    <div className="col-12">
                                                         <label className="form-label">Name <span className="text-danger">*</span></label>
                                                         <input className={`form-control ${submitted && errors.name ? "is-invalid" : ""}`}
                                                             placeholder="Resource Name"
                                                             value={form.name}
-                                                            onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                                                            onChange={e => setForm({ ...form, name: e.target.value })} />
                                                         {submitted && errors.name && <div className="invalid-feedback">{errors.name}</div>}
                                                     </div>
 
@@ -434,7 +367,7 @@ export default function ResourceList() {
                                                         <input className={`form-control ${submitted && errors.email ? "is-invalid" : ""}`}
                                                             placeholder="resource@example.com"
                                                             value={form.email}
-                                                            onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                                                            onChange={e => setForm({ ...form, email: e.target.value })} />
                                                         {submitted && errors.email && <div className="invalid-feedback">{errors.email}</div>}
                                                     </div>
 
@@ -443,7 +376,7 @@ export default function ResourceList() {
                                                         <input className={`form-control ${submitted && errors.mobile ? "is-invalid" : ""}`}
                                                             placeholder="10 digits"
                                                             value={form.mobile}
-                                                            onChange={(e) => setForm({ ...form, mobile: e.target.value })} />
+                                                            onChange={e => setForm({ ...form, mobile: e.target.value })} />
                                                         {submitted && errors.mobile && <div className="invalid-feedback">{errors.mobile}</div>}
                                                     </div>
 
@@ -452,7 +385,7 @@ export default function ResourceList() {
                                                         <input className={`form-control ${submitted && errors.designation ? "is-invalid" : ""}`}
                                                             placeholder="e.g., Developer"
                                                             value={form.designation}
-                                                            onChange={(e) => setForm({ ...form, designation: e.target.value })} />
+                                                            onChange={e => setForm({ ...form, designation: e.target.value })} />
                                                         {submitted && errors.designation && <div className="invalid-feedback">{errors.designation}</div>}
                                                     </div>
 
@@ -461,7 +394,7 @@ export default function ResourceList() {
                                                         <input className={`form-control ${submitted && errors.skill ? "is-invalid" : ""}`}
                                                             placeholder="e.g., JavaScript"
                                                             value={form.skill}
-                                                            onChange={(e) => setForm({ ...form, skill: e.target.value })} />
+                                                            onChange={e => setForm({ ...form, skill: e.target.value })} />
                                                         {submitted && errors.skill && <div className="invalid-feedback">{errors.skill}</div>}
                                                     </div>
 
@@ -470,7 +403,7 @@ export default function ResourceList() {
                                                         <input className={`form-control ${submitted && errors.exp ? "is-invalid" : ""}`}
                                                             placeholder="e.g., 3 years"
                                                             value={form.exp}
-                                                            onChange={(e) => setForm({ ...form, exp: e.target.value })} />
+                                                            onChange={e => setForm({ ...form, exp: e.target.value })} />
                                                         {submitted && errors.exp && <div className="invalid-feedback">{errors.exp}</div>}
                                                     </div>
 
@@ -479,7 +412,7 @@ export default function ResourceList() {
                                                         <input className="form-control"
                                                             placeholder="e.g., Bachelor's Degree"
                                                             value={form.qualification}
-                                                            onChange={(e) => setForm({ ...form, qualification: e.target.value })} />
+                                                            onChange={e => setForm({ ...form, qualification: e.target.value })} />
                                                     </div>
 
                                                     <div className="col-12 col-md-4">
@@ -487,7 +420,7 @@ export default function ResourceList() {
                                                         <input className="form-control"
                                                             placeholder="e.g., Texas"
                                                             value={form.state}
-                                                            onChange={(e) => setForm({ ...form, state: e.target.value })} />
+                                                            onChange={e => setForm({ ...form, state: e.target.value })} />
                                                     </div>
 
                                                     <div className="col-12 col-md-4">
@@ -495,15 +428,14 @@ export default function ResourceList() {
                                                         <input className="form-control"
                                                             placeholder="e.g., Houston"
                                                             value={form.city}
-                                                            onChange={(e) => setForm({ ...form, city: e.target.value })} />
+                                                            onChange={e => setForm({ ...form, city: e.target.value })} />
                                                     </div>
 
                                                     <div className="col-12 col-md-4">
                                                         <label className="form-label">Start Date <span className="text-danger">*</span></label>
-                                                        <input type="date"
-                                                            className={`form-control ${submitted && errors.start ? "is-invalid" : ""}`}
-                                                            value={form.start}
-                                                            onChange={(e) => setForm({ ...form, start: e.target.value })} />
+                                                        <input type="date" className={`form-control ${submitted && errors.start ? "is-invalid" : ""}`}
+                                                            value={toDMY(form.start)}
+                                                            onChange={e => setForm({ ...form, start: e.target.value })} />
                                                         {submitted && errors.start && <div className="invalid-feedback">{errors.start}</div>}
                                                         <div className="form-text">Default to today; format dd/mm/yyyy ({ddmmyyyy})</div>
                                                     </div>
@@ -511,7 +443,7 @@ export default function ResourceList() {
                                             </div>
                                         </div>
 
-                                        <div className="modal-footer">
+                                        <div className="modal-footer border-0 border-top">
                                             <button type="submit" className="btn btn-primary">Save</button>
                                             <button type="button" className="btn btn-outline-secondary" onClick={() => setShowModal(false)}>Close</button>
                                         </div>

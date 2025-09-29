@@ -1,9 +1,29 @@
-/* keep content full-width but give a tiny vertical rhythm */
-.app-main{
-  padding: 8px 12px;
+/* Root: enable full-height flex so footer can stick at bottom */
+.dashboard-root{
+  min-height: 100dvh;           /* handles mobile address bar correctly */
+  display: flex;
+  flex-direction: column;
+  background: var(--pm-surface, #f7fafc); /* optional soft bg */
 }
 
+/* Shell wraps header/main/footer and stretches */
+.app-shell{
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Main: keep your rhythm; also expand to fill remaining space */
+.app-main{
+  flex: 1 1 auto;
+  padding: 8px 12px;            /* your original spacing */
+}
+
+/* Footer: pinned, subtle separation */
 .app-footer{
-  padding: 10px 12px;
-  color: var(--pm-muted, #6b7280);
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1030;
 }

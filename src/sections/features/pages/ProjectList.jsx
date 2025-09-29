@@ -1,15 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import AppLayout from "../components/AppLayout";
 import "./ProjectList.css";
 
-/**
- * Project List (single React function)
- * - Filters: project search, manager, lead, pod lead, from/to date
- * - Sort: click any header
- * - Actions: Add/Edit in one modal, Delete with confirm
- * - Validations: required fields
- * - Styling via ProjectList.css to match the screenshot
- */
 export default function ProjectList() {
     // ---- seed data ----
     const seed = [
@@ -33,21 +25,29 @@ export default function ProjectList() {
     // ---- sort ----
     const [sortKey, setSortKey] = useState("name");
     const [sortDir, setSortDir] = useState("asc");
+    const toggleSort = (key) => {
+        if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+        else { setSortKey(key); setSortDir("asc"); }
+    };
 
     // ---- modal (single for add/edit) ----
     const emptyForm = { id: "", name: "", manager: "", lead: "", podLead: "", trainer: "", start: "" };
     const [showModal, setShowModal] = useState(false);
     const [form, setForm] = useState(emptyForm);
-    const [mode, setMode] = useState("add"); // "add" | "edit"
+    const [mode, setMode] = useState("add");
     const [submitted, setSubmitted] = useState(false);
 
-    const managers = useMemo(
-        () => ["N. Gupta", "L. Kulkarni"],
-        []
-    );
+    const managers = useMemo(() => ["N. Gupta", "L. Kulkarni"], []);
     const leads = useMemo(() => ["P. Mehta", "A. Verma", "S. Rao"], []);
     const podLeads = useMemo(() => ["M. Iyer", "Z. Khan"], []);
     const trainers = useMemo(() => ["Rahul Shah", "Vikram Patel", "Arjun Menon", "Asha Kumar", "Ishita Bose", "Neha Das"], []);
+
+    useEffect(() => {
+        // autosize all selects with the .auto-size class in the header
+        document
+            .querySelectorAll(".pl-scope .filter-wrap .auto-size")
+            .forEach((el) => autosizeSelect(el));
+    }, [fManager, fLead, fPodLead]);
 
     // ---- derived: filtered + sorted ----
     const filtered = useMemo(() => {
@@ -73,31 +73,21 @@ export default function ProjectList() {
     const resetFilters = () => {
         setQ(""); setFManager("All Managers"); setFLead("All Leads"); setFPodLead("All Pod Leads"); setFrom(""); setTo("");
     };
-    const toggleSort = (key) => {
-        if (sortKey === key) setSortDir(d => (d === "asc" ? "desc" : "asc"));
-        else { setSortKey(key); setSortDir("asc"); }
-    };
     const nextId = () => {
         const max = rows.reduce((acc, r) => Math.max(acc, parseInt(r.id.replace("GMP", ""), 10)), 0);
-        const n = String(max + 1).padStart(3, "0");
-        return `GMP${n}`;
+        return `GMP${String(max + 1).padStart(3, "0")}`;
     };
 
     // ---- CRUD ----
     const onAddClick = () => {
         setForm({ ...emptyForm, id: nextId() });
-        setMode("add"); setSubmitted(false);
-        setShowModal(true);
+        setMode("add"); setSubmitted(false); setShowModal(true);
     };
     const onEdit = (r) => {
-        setForm({ ...r });
-        setMode("edit"); setSubmitted(false);
-        setShowModal(true);
+        setForm({ ...r }); setMode("edit"); setSubmitted(false); setShowModal(true);
     };
     const onDelete = (id) => {
-        if (window.confirm("Delete this project?")) {
-            setRows(prev => prev.filter(r => r.id !== id));
-        }
+        if (window.confirm("Delete this project?")) setRows(prev => prev.filter(r => r.id !== id));
     };
 
     // ---- validation ----
@@ -117,78 +107,136 @@ export default function ProjectList() {
         e.preventDefault();
         setSubmitted(true);
         if (!isValid) return;
-
         if (mode === "add") setRows(prev => [{ ...form }, ...prev]);
-        else setRows(prev => prev.map(r => r.id === form.id ? { ...form } : r));
-
+        else setRows(prev => prev.map(r => (r.id === form.id ? { ...form } : r)));
         setShowModal(false);
     };
 
-    // ---- view ----
+    // Display Date as DD-MM-YYYY
+    const toDMY = (ymd) => {
+        if (!ymd) return "";
+        const [y, m, d] = ymd.split("-");
+        return (y && m && d) ? `${d}-${m}-${y}` : ymd;
+    };
+    const toYMD = (dmy) => {
+        if (!dmy) return "";
+        const [d, m, y] = dmy.split("-");
+        return (d && m && y) ? `${y}-${m}-${d}` : dmy;
+    };
+
     return (
         <AppLayout>
-            <div className="projects-page">
-                <div className="projects-actions d-flex justify-content-end">
-                    <button className="btn btn-primary" onClick={onAddClick} title="Add Project">
-                        <i className="bi bi-plus-lg" />
+            <div className="pl-scope px-2 py-2">
+                {/* Add button: icon-first with hover label */}
+                <div className="d-flex justify-content-end mb-2">
+                    <button className="btn btn-primary action-btn" onClick={onAddClick} title="Add Project">
+                        <i className="bi bi-plus-circle" /><span className="label">Add Project</span>
                     </button>
                 </div>
 
+                <div className="card shadow-lg bg-body-tertiary rounded-3 border-3 shadow">
+                    <div className="card-header bg-warning-subtle text-warning-emphasis">
+                        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
 
-                {/* TITLE + FILTER BAR */}
-                <div className="projects-card card shadow-sm">
-                    <div className="projects-toolbar d-flex justify-content-between">
-                        <div className="title">Projects</div>
+                            {/* LEFT: Title + SEARCH inline */}
+                            <div className="d-flex align-items-center gap-5 flex-nowrap">
+                                <h5 className="mb-0">Projects</h5>
 
-                        <div className="filters">
-                            {/* search / All Projects */}
-                            <div className="input-group filter-item">
-                                <span className="input-group-text"><i className="bi bi-funnel" /></span>
-                                <input
-                                    className="form-control"
-                                    placeholder="All Projects (search by name)"
-                                    value={q}
-                                    onChange={(e) => setQ(e.target.value)}
-                                />
+                                {/* Search right next to the title */}
+                                <div className="input-group header-search">
+                                    <span className="input-group-text bg-white">
+                                        <i className="bi bi-funnel" />
+                                    </span>
+                                    <input
+                                        className="form-control"
+                                        placeholder="All Projects (search by name)"
+                                        value={q}
+                                        onChange={(e) => setQ(e.target.value)}
+                                    />
+                                </div>
                             </div>
 
-                            <select className="form-select filter-item" value={fManager} onChange={(e) => setFManager(e.target.value)}>
-                                <option>All GMS Managers</option>
-                                {managers.map(m => <option key={m}>{m}</option>)}
-                            </select>
+                            {/* RIGHT: Filters */}
+                            <div className="d-flex align-items-center filter-wrap">
+                                <select
+                                    className="form-select auto-size"
+                                    value={fManager}
+                                    onChange={(e) => setFManager(e.target.value)}
+                                >
+                                    <option>All Managers</option>
+                                    {managers.map((m) => <option key={m}>{m}</option>)}
+                                </select>
 
-                            <select className="form-select filter-item" value={fLead} onChange={(e) => setFLead(e.target.value)}>
-                                <option>All Turing Manager</option>
-                                {leads.map(m => <option key={m}>{m}</option>)}
-                            </select>
+                                <select
+                                    className="form-select auto-size"
+                                    value={fLead}
+                                    onChange={(e) => setFLead(e.target.value)}
+                                >
+                                    <option>All Leads</option>
+                                    {leads.map((m) => <option key={m}>{m}</option>)}
+                                </select>
 
-                            <select className="form-select filter-item" value={fPodLead} onChange={(e) => setFPodLead(e.target.value)}>
-                                <option>All Pod Leads</option>
-                                {podLeads.map(m => <option key={m}>{m}</option>)}
-                            </select>
-
-                            <input type="date" className="form-control filter-item" value={from} onChange={(e) => setFrom(e.target.value)} placeholder="From Date" />
-                            <input type="date" className="form-control filter-item" value={to} onChange={(e) => setTo(e.target.value)} placeholder="To Date" />
-
-                            <button className="btn btn-outline-secondary filter-item" onClick={resetFilters}>
-                                <i className="bi bi-arrow-counterclockwise me-1" /> Reset
-                            </button>
+                                <select
+                                    className="form-select auto-size"
+                                    value={fPodLead}
+                                    onChange={(e) => setFPodLead(e.target.value)}
+                                >
+                                    <option>All Pod Leads</option>
+                                    {podLeads.map((m) => <option key={m}>{m}</option>)}
+                                </select>
+                                <input
+                                    placeholder="From Date"
+                                    type="text"
+                                    className="form-control date-input"
+                                    value={from}                               // store/display as dd-mm-yyyy
+                                    onChange={(e) => setFrom(e.target.value)}
+                                    onFocus={(e) => {
+                                        e.target.type = "date";                  // show native picker
+                                        if (from) e.target.value = toYMD(from);  // convert display to yyyy-mm-dd for picker
+                                    }}
+                                    onBlur={(e) => {
+                                        const picked = e.target.value;           // yyyy-mm-dd from picker
+                                        e.target.type = "text";                  // back to text (placeholder visible)
+                                        setFrom(picked ? toDMY(picked) : "");    // show dd-mm-yyyy
+                                    }}
+                                />
+                                <input
+                                    placeholder="To Date"
+                                    type="text"
+                                    className="form-control date-input"
+                                    value={to}
+                                    onChange={(e) => setTo(e.target.value)}
+                                    onFocus={(e) => {
+                                        e.target.type = "date";
+                                        if (to) e.target.value = toYMD(to);
+                                    }}
+                                    onBlur={(e) => {
+                                        const picked = e.target.value;
+                                        e.target.type = "text";
+                                        setTo(picked ? toDMY(picked) : "");
+                                    }}
+                                />
+                                <button className="btn btn-outline-secondary reset" onClick={resetFilters}>
+                                    <i className="bi bi-arrow-counterclockwise" /><span className="label">Reset</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
+
                     {/* TABLE */}
-                    <div className="table-responsive">
-                        <table className="table table-hover projects-table">
-                            <thead>
+                    <div className="table-responsive bg-warning-subtle text-warning-emphasis rounded shadow">
+                        <table className="table table-info table-striped-columns table-hover align-middle mb-0 has-actions">
+                            <thead className="table-success">
                                 <tr>
                                     <Th label="ID" k="id" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                                     <Th label="Project Name" k="name" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                                    <Th label="Gms Manager" k="manager" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                                    <Th label="Turing Manager" k="lead" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                                    <Th label="Manager" k="manager" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                                    <Th label="Lead" k="lead" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                                     <Th label="Pod Lead" k="podLead" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                                     <Th label="Trainer" k="trainer" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                                     <Th label="Start Date" k="start" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                                    <th style={{ width: 110 }} className="text-end">Actions</th>
+                                    <th className="actions-col">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -197,17 +245,25 @@ export default function ProjectList() {
                                         <td className="text-muted">{r.id}</td>
                                         <td className="fw-semibold">{r.name}</td>
                                         <td>{r.manager}</td>
-                                        <td><u>{r.lead}</u></td>
-                                        <td><u>{r.podLead}</u></td>
+                                        <td>{r.lead}</td>
+                                        <td>{r.podLead}</td>
                                         <td>{r.trainer}</td>
-                                        <td>{r.start}</td>
-                                        <td className="text-end">
-                                            <div className="btn-group btn-group-sm" role="group">
-                                                <button className="btn btn-outline-secondary" onClick={() => onEdit(r)} title="Edit">
-                                                    <i className="bi bi-pencil-square" />
+                                        <td>{toDMY(r.start)}</td>
+                                        <td className="actions-col">
+                                            <div className="action-wrap">
+                                                <button
+                                                    className="btn btn-outline-secondary btn-sm action-btn"
+                                                    onClick={() => onEdit(r)}
+                                                    title="Edit"
+                                                >
+                                                    <i className="bi bi-pencil-square" /><span className="label">Edit</span>
                                                 </button>
-                                                <button className="btn btn-outline-danger" onClick={() => onDelete(r.id)} title="Delete">
-                                                    <i className="bi bi-trash" />
+                                                <button
+                                                    className="btn btn-outline-danger btn-sm action-btn"
+                                                    onClick={() => onDelete(r.id)}
+                                                    title="Delete"
+                                                >
+                                                    <i className="bi bi-trash3" /><span className="label">Delete</span>
                                                 </button>
                                             </div>
                                         </td>
@@ -304,7 +360,7 @@ export default function ProjectList() {
                                                         <input
                                                             type="date"
                                                             className={`form-control ${submitted && errors.start ? "is-invalid" : ""}`}
-                                                            value={form.start}
+                                                            value={toDMY(from.start)}
                                                             onChange={(e) => setForm({ ...form, start: e.target.value })}
                                                         />
                                                         {submitted && errors.start && <div className="invalid-feedback">{errors.start}</div>}
@@ -321,7 +377,6 @@ export default function ProjectList() {
                                 </div>
                             </div>
                         </div>
-                        {/* lightweight backdrop */}
                         <div className="modal-backdrop fade show"></div>
                     </>
                 )}
@@ -330,15 +385,30 @@ export default function ProjectList() {
     );
 }
 
-/* --- small helper header cell (inside this file to keep single-function feel) */
+/* -- Sortable header cell (CSHTML-like UI) -- */
 function Th({ label, k, sortKey, sortDir, onSort }) {
     const active = sortKey === k;
+    const icon = active ? (sortDir === "asc" ? "bi-arrow-up text-primary" : "bi-arrow-down text-primary") : "bi-arrow-down-up";
     return (
-        <th role="button" onClick={() => onSort(k)}>
-            <span className="me-1">{label}</span>
-            <span className={"sort " + (active ? sortDir : "")}>
-                <i className="bi bi-arrow-down-up" />
-            </span>
+        <th className={`sortable ${active ? "active" : ""}`}>
+            <button type="button" className="sort-btn" onClick={() => onSort(k)} title={`Sort by ${label}`}>
+                {label} <i className={`bi ${icon} sort-icon`} />
+            </button>
         </th>
     );
+}
+
+// Utility: fit a <select> to its selected option text
+function autosizeSelect(el) {
+    if (!el) return;
+    const span = document.createElement("span");
+    span.style.visibility = "hidden";
+    span.style.whiteSpace = "pre";
+    span.style.position = "absolute";
+    span.textContent = el.options[el.selectedIndex]?.text || "";
+    document.body.appendChild(span);
+    // base + caret + padding buffer
+    const w = Math.ceil(span.getBoundingClientRect().width + 48);
+    el.style.width = `${w}px`;
+    document.body.removeChild(span);
 }

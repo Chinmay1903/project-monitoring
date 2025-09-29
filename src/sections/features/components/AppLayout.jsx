@@ -1,18 +1,18 @@
 import React from "react";
 import AppHeader from "./AppHeader";
-import "./AppLayout.css";                 // minimal
-import "../dashboard-global.css"; // dashboard vars/surface
+import "./AppLayout.css";
+import "../dashboard-global.css";
 
 export default function AppLayout({
   children,
-  footerText = "© 2025 · Project Monitoring — Gianmind Solutions Pvt Ltd",
+  footerText = `© ${new Date().getFullYear()} · Project Monitoring ~ Giantmind Solutions Pvt Ltd`,
 }) {
   return (
     <div className="dashboard-root">
-      <div className="container-fluid px-0">
+      <div className="container-fluid px-0 app-shell">
         <AppHeader />
         <main className="app-main">{children}</main>
-        <footer className="app-footer pm-footer text-center small">
+        <footer className="bg-white border-top text-center py-2 app-footer shadow-lg">
           {footerText}
         </footer>
       </div>
