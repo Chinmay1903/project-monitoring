@@ -39,19 +39,6 @@ export const getEmployeeNames = async () => {
   };
 };
 
-export const getManagerNames = async () => {
-  const res = await http.get("/manager_names");
-  console.log(res);
-
-  const data = res?.data;
-  const ok = res.status === 200 && Array.isArray(data?.names);
-  return {
-    ok,
-    message: data?.message || (ok ? "Manager names fetched successfully" : "Failed to fetch manager names"),
-    data: data,
-  };
-};
-
 export const addEmployee = async (employee) => {
   const res = await http.post("/employees", employee);
   console.log(res);
@@ -87,4 +74,52 @@ export const deleteEmployee = async (id) => {
       message: data?.message || (ok ? "Employee deleted successfully" : "Failed to delete employee"),
       data: data,
     };
+};
+
+export const getProjects = async () => {
+  const res = await http.get("/projects");
+  console.log(res);
+  const data = res?.data;
+  const ok = res.status === 200 && Array.isArray(data?.projects);
+  return {
+    ok,
+    message: data?.message || (ok ? "Projects fetched successfully" : "Failed to fetch projects"),
+    data: data,
+  };
+};
+
+export const addProject = async (project) => {
+  const res = await http.post("/projects", project);
+  console.log(res);
+  const data = res?.data;
+  const ok = res.status === 200 && data?.message === "Project added successfully";
+  return {
+    ok,
+    message: data?.message || (ok ? "Project added successfully" : "Failed to add project"),
+    data: data,
+  };
+};
+
+export const updateProject = async (id, project) => {
+  const res = await http.put(`/projects/${id}`, project);
+  console.log(res);
+  const data = res?.data;
+  const ok = res.status === 200 && data?.message === "Project updated successfully";
+  return {
+    ok,
+    message: data?.message || (ok ? "Project updated successfully" : "Failed to update project"),
+    data: data,
+  };
+};
+
+export const deleteProject = async (id) => {
+  const res = await http.delete(`/projects/${id}`);
+  console.log(res);
+  const data = res?.data;
+  const ok = res.status === 200 && data?.message === "Project deleted successfully";
+  return {
+    ok,
+    message: data?.message || (ok ? "Project deleted successfully" : "Failed to delete project"),
+    data: data,
+  };
 };

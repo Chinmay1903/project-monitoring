@@ -63,23 +63,41 @@ export default function TaskMonitoring() {
   const trainers = Object.entries(trainerMap).map(([id, t]) => ({ id, name: t.name }));
 
   /* -------------------------------- seed data ------------------------------ */
-  const seed = [
-    // 2025-08-29 (from your screenshot)
-    { id: "t1", date: "2025-08-29", trainerId: "GMS101", trainer: "Asha Kumar", project: "Inventory Revamp", manager: "N. Gupta", lead: "S. Rao", podLead: "M. Iyer", hours: 6, newTask: 6, reworked: 2, prPassed: 2, approved: 2 },
-    { id: "t2", date: "2025-08-29", trainerId: "GMS101", trainer: "Asha Kumar", project: "Partner Portal", manager: "N. Gupta", lead: "S. Rao", podLead: "M. Iyer", hours: 2, newTask: 3, reworked: 1, prPassed: 1, approved: 1 },
-    { id: "t3", date: "2025-08-29", trainerId: "GMS102", trainer: "Rahul Shah", project: "Billing Migration", manager: "N. Gupta", lead: "P. Mehta", podLead: "M. Iyer", hours: 4, newTask: 4, reworked: 1, prPassed: 1, approved: 1 },
-    // a spread across the month for charts/tabs
-    { id: "t4", date: "2025-08-05", trainerId: "GMS101", trainer: "Asha Kumar", project: "Inventory Revamp", manager: "N. Gupta", lead: "S. Rao", podLead: "M. Iyer", hours: 7, newTask: 5, reworked: 2, prPassed: 2, approved: 2 },
-    { id: "t5", date: "2025-08-12", trainerId: "GMS101", trainer: "Asha Kumar", project: "Mobile App v3", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 8, newTask: 3, reworked: 1, prPassed: 1, approved: 1 },
-    { id: "t6", date: "2025-08-10", trainerId: "GMS102", trainer: "Rahul Shah", project: "Fraud Engine", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 6, newTask: 2, reworked: 1, prPassed: 1, approved: 1 },
-    { id: "t7", date: "2025-08-18", trainerId: "GMS102", trainer: "Rahul Shah", project: "Billing Migration", manager: "N. Gupta", lead: "P. Mehta", podLead: "M. Iyer", hours: 5, newTask: 4, reworked: 0, prPassed: 1, approved: 1 },
-    { id: "t8", date: "2025-08-03", trainerId: "GMS103", trainer: "Ishita Bose", project: "Mobile App v3", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 6, newTask: 2, reworked: 1, prPassed: 1, approved: 1 },
-    { id: "t9", date: "2025-08-16", trainerId: "GMS103", trainer: "Ishita Bose", project: "Data Lake ETL", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 7, newTask: 3, reworked: 1, prPassed: 1, approved: 1 },
-    { id: "t10", date: "2025-08-22", trainerId: "GMS103", trainer: "Ishita Bose", project: "Mobile App v3", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 4, newTask: 2, reworked: 1, prPassed: 1, approved: 1 },
-    // a couple near month end for "week"
-    { id: "t11", date: "2025-08-27", trainerId: "GMS101", trainer: "Asha Kumar", project: "Partner Portal", manager: "N. Gupta", lead: "S. Rao", podLead: "M. Iyer", hours: 3, newTask: 2, reworked: 0, prPassed: 1, approved: 1 },
-    { id: "t12", date: "2025-08-28", trainerId: "GMS102", trainer: "Rahul Shah", project: "Fraud Engine", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 6, newTask: 3, reworked: 1, prPassed: 1, approved: 1 },
-  ];
+  // Expanded sample worklog data — September 2025
+const seed = [
+  { id: "t1",  date: "2025-09-29", trainerId: "GMS101", trainer: "Asha Kumar",  project: "Inventory Revamp",  manager: "N. Gupta",    lead: "S. Rao",   podLead: "M. Iyer", hours: 6, taskCompleted: 6, reworked: 2, inProgress: 2, approved: 2, rejected: 0, reviewed: 0 },
+  { id: "t2",  date: "2025-09-29", trainerId: "GMS101", trainer: "Asha Kumar",  project: "Partner Portal",    manager: "N. Gupta",    lead: "S. Rao",   podLead: "M. Iyer", hours: 3, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 1 },
+  { id: "t3",  date: "2025-09-29", trainerId: "GMS102", trainer: "Rahul Shah",  project: "Billing Migration", manager: "N. Gupta",    lead: "P. Mehta", podLead: "M. Iyer", hours: 5, taskCompleted: 4, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+
+  // near month end for "week"
+  { id: "t4",  date: "2025-09-28", trainerId: "GMS102", trainer: "Rahul Shah",  project: "Fraud Engine",      manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 6, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 1, reviewed: 0 },
+  { id: "t5",  date: "2025-09-27", trainerId: "GMS101", trainer: "Asha Kumar",  project: "Partner Portal",    manager: "N. Gupta",    lead: "S. Rao",   podLead: "M. Iyer", hours: 3, taskCompleted: 2, reworked: 0, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+  { id: "t6",  date: "2025-09-26", trainerId: "GMS103", trainer: "Ishita Bose", project: "Data Lake ETL",     manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 7, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 1 },
+
+  // spread across the month
+  { id: "t7",  date: "2025-09-02", trainerId: "GMS101", trainer: "Asha Kumar",  project: "Inventory Revamp",  manager: "N. Gupta",    lead: "S. Rao",   podLead: "M. Iyer", hours: 7, taskCompleted: 5, reworked: 2, inProgress: 2, approved: 2, rejected: 0, reviewed: 0 },
+  { id: "t8",  date: "2025-09-03", trainerId: "GMS101", trainer: "Asha Kumar",  project: "Mobile App v3",     manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 8, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 1 },
+  { id: "t9",  date: "2025-09-05", trainerId: "GMS102", trainer: "Rahul Shah",  project: "Billing Migration", manager: "N. Gupta",    lead: "P. Mehta", podLead: "M. Iyer", hours: 4, taskCompleted: 4, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+  { id: "t10", date: "2025-09-06", trainerId: "GMS102", trainer: "Rahul Shah",  project: "Fraud Engine",      manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 6, taskCompleted: 2, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+  { id: "t11", date: "2025-09-08", trainerId: "GMS103", trainer: "Ishita Bose", project: "Mobile App v3",     manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 6, taskCompleted: 2, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+  { id: "t12", date: "2025-09-10", trainerId: "GMS103", trainer: "Ishita Bose", project: "Data Lake ETL",     manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 7, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 1, reviewed: 0 },
+  { id: "t13", date: "2025-09-12", trainerId: "GMS101", trainer: "Asha Kumar",  project: "Partner Portal",    manager: "N. Gupta",    lead: "S. Rao",   podLead: "M. Iyer", hours: 2, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+  { id: "t14", date: "2025-09-15", trainerId: "GMS101", trainer: "Asha Kumar",  project: "Inventory Revamp",  manager: "N. Gupta",    lead: "S. Rao",   podLead: "M. Iyer", hours: 6, taskCompleted: 5, reworked: 1, inProgress: 2, approved: 2, rejected: 0, reviewed: 1 },
+  { id: "t15", date: "2025-09-16", trainerId: "GMS102", trainer: "Rahul Shah",  project: "Billing Migration", manager: "N. Gupta",    lead: "P. Mehta", podLead: "M. Iyer", hours: 5, taskCompleted: 4, reworked: 0, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+  { id: "t16", date: "2025-09-18", trainerId: "GMS103", trainer: "Ishita Bose", project: "Data Lake ETL",     manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 6, taskCompleted: 2, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+  { id: "t17", date: "2025-09-20", trainerId: "GMS102", trainer: "Rahul Shah",  project: "Fraud Engine",      manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 6, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 1 },
+  { id: "t18", date: "2025-09-22", trainerId: "GMS101", trainer: "Asha Kumar",  project: "Mobile App v3",     manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 7, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+  { id: "t19", date: "2025-09-24", trainerId: "GMS103", trainer: "Ishita Bose", project: "Mobile App v3",     manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 4, taskCompleted: 2, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+  { id: "t20", date: "2025-09-25", trainerId: "GMS102", trainer: "Rahul Shah",  project: "Billing Migration", manager: "N. Gupta",    lead: "P. Mehta", podLead: "M. Iyer", hours: 5, taskCompleted: 4, reworked: 1, inProgress: 1, approved: 1, rejected: 1, reviewed: 0 },
+
+  // extra mid-month coverage
+  { id: "t21", date: "2025-09-11", trainerId: "GMS101", trainer: "Asha Kumar",  project: "Inventory Revamp",  manager: "N. Gupta",    lead: "S. Rao",   podLead: "M. Iyer", hours: 6, taskCompleted: 4, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+  { id: "t22", date: "2025-09-13", trainerId: "GMS102", trainer: "Rahul Shah",  project: "Fraud Engine",      manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 0, taskCompleted: 2, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+  { id: "t23", date: "2025-09-19", trainerId: "GMS101", trainer: "Asha Kumar",  project: "Partner Portal",    manager: "N. Gupta",    lead: "S. Rao",   podLead: "M. Iyer", hours: 3, taskCompleted: 2, reworked: 0, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+  { id: "t24", date: "2025-09-21", trainerId: "GMS103", trainer: "Ishita Bose", project: "Data Lake ETL",     manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 7, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 1 },
+];
+
+
   const [rows, setRows] = useState(seed);
 
   /* --------------------------------- filters -------------------------------- */
@@ -116,7 +134,7 @@ export default function TaskMonitoring() {
   const emptyForm = {
     date: today, trainerId: "", trainer: "",
     project: "", manager: "", lead: "", podLead: "",
-    hours: "", overtime: false, newTask: "", reworked: "", prPassed: "", approved: ""
+    hours: "", overtime: false, taskCompleted: 0, reworked: 0, inProgress: 0, approved: 0, rejected: 0, reviewed: 0
   };
   const [showModal, setShowModal] = useState(false);
   const [mode, setMode] = useState("add"); // add | edit
@@ -133,10 +151,12 @@ export default function TaskMonitoring() {
     podLead: f.podLead || "",
     hours: f.hours ?? "",
     overtime: !!f.overtime,
-    newTask: f.newTask ?? "",
-    reworked: f.reworked ?? "",
-    prPassed: f.prPassed ?? "",
-    approved: f.approved ?? ""
+    inProgress: f.inProgress ?? 0,
+    taskCompleted: f.taskCompleted ?? 0,
+    reworked: f.reworked ?? 0,
+    approved: f.approved ?? 0,
+    rejected: f.rejected ?? 0,
+    reviewed: f.reviewed ?? 0,  
   });
 
   const onAdd = () => {
@@ -208,10 +228,12 @@ export default function TaskMonitoring() {
     if (!form.date) e.date = "Date is required.";
     if (form.hours === "" || isNaN(hoursNum)) e.hours = "Hours are required.";
     else if (!form.overtime && hoursNum > 8) e.hours = "Max 8 hrs unless Overtime is checked.";
-    if (!numOk(form.newTask)) e.newTask = "Digits only.";
+    if (!numOk(form.inProgress)) e.inProgress = "Digits only.";
+    if (!numOk(form.taskCompleted)) e.taskCompleted = "Digits only.";
     if (!numOk(form.reworked)) e.reworked = "Digits only.";
-    if (!numOk(form.prPassed)) e.prPassed = "Digits only.";
     if (!numOk(form.approved)) e.approved = "Digits only.";
+    if (!numOk(form.rejected)) e.rejected = "Digits only.";
+    if (!numOk(form.reviewed)) e.reviewed = "Digits only.";
     return e;
   }, [form, hoursNum]);
 
@@ -224,12 +246,12 @@ export default function TaskMonitoring() {
     if (mode === "add") {
       const id = "t" + Math.random().toString(36).slice(2, 8);
       setRows(prev => [
-        { id, ...form, hours: Number(form.hours || 0), newTask: Number(form.newTask || 0), reworked: Number(form.reworked || 0), prPassed: Number(form.prPassed || 0), approved: Number(form.approved || 0) },
+        { id, ...form, hours: Number(form.hours || 0), taskCompleted: Number(form.taskCompleted || 0), reworked: Number(form.reworked || 0), inProgress: Number(form.inProgress || 0), approved: Number(form.approved || 0) },
         ...prev
       ]);
     } else {
       setRows(prev => prev.map(r => r.id === form.id
-        ? { ...form, hours: Number(form.hours || 0), newTask: Number(form.newTask || 0), reworked: Number(form.reworked || 0), prPassed: Number(form.prPassed || 0), approved: Number(form.approved || 0) }
+        ? { ...form, hours: Number(form.hours || 0), taskCompleted: Number(form.taskCompleted || 0), reworked: Number(form.reworked || 0), inProgress: Number(form.inProgress || 0), approved: Number(form.approved || 0) }
         : r
       ));
     }
@@ -253,12 +275,12 @@ export default function TaskMonitoring() {
   // aggregates for charts (current filtered scope)
   const agg = useMemo(() => {
     const total = baseRows.reduce((acc, r) => {
-      acc.newTask += Number(r.newTask || 0);
+      acc.taskCompleted += Number(r.taskCompleted || 0);
       acc.reworked += Number(r.reworked || 0);
-      acc.prPassed += Number(r.prPassed || 0);
+      acc.inProgress += Number(r.inProgress || 0);
       acc.approved += Number(r.approved || 0);
       return acc;
-    }, { newTask: 0, reworked: 0, prPassed: 0, approved: 0 });
+    }, { taskCompleted: 0, reworked: 0, inProgress: 0, approved: 0 });
 
     // hours-by-date for line
     const map = {};
@@ -323,10 +345,12 @@ export default function TaskMonitoring() {
                   <Th label="Lead" k="lead" />
                   <Th label="Pod Lead" k="podLead" />
                   <Th label="Hours" k="hours" />
-                  <Th label="New Task" k="newTask" />
+                  <Th label="In Progress" k="inProgress" />
+                  <Th label="Task Completed" k="taskCompleted" />
                   <Th label="Reworked" k="reworked" />
-                  <Th label="PR Passed" k="prPassed" />
                   <Th label="Approved" k="approved" />
+                  <Th label="Rejected" k="rejected" />
+                  <Th label="Reviewed" k="reviewed" />
                   <th style={{ width: 110 }} className="text-end">Actions</th>
                 </tr>
               </thead>
@@ -344,10 +368,12 @@ export default function TaskMonitoring() {
                     <td>{r.lead}</td>
                     <td>{r.podLead}</td>
                     <td>{r.hours}</td>
-                    <td className="text-primary fw-semibold">{r.newTask}</td>
+                    <td className="text-primary fw-semibold">{r.inProgress}</td>
+                    <td className="text-warning fw-semibold">{r.taskCompleted}</td>
                     <td className="text-danger fw-semibold">{r.reworked}</td>
-                    <td className="text-info fw-semibold">{r.prPassed}</td>
                     <td className="text-success fw-semibold">{r.approved}</td>
+                    <td className="text-secondary fw-semibold">{r.rejected}</td>
+                    <td className="text-warning fw-semibold">{r.reviewed}</td>
                     <td className="text-end">
                       <div className="btn-group btn-group-sm">
                         <button className="btn btn-outline-secondary" onClick={() => onEdit(r)} title="Edit"><i className="bi bi-pencil-square" /></button>
@@ -376,7 +402,7 @@ export default function TaskMonitoring() {
                       <BarChart data={[
                         { status: "New Task", count: agg.total.newTask },
                         { status: "Reworked", count: agg.total.reworked },
-                        { status: "PR Passed", count: agg.total.prPassed },
+                        { status: "In Progress", count: agg.total.inProgress },
                         { status: "Approved", count: agg.total.approved },
                       ]}>
                         <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" />
@@ -428,13 +454,13 @@ export default function TaskMonitoring() {
                       <div className="container-fluid">
                         <div className="row g-3">
                           <div className="col-12 col-md-6">
-                            <label className="form-label">Trainer Name <span className="text-danger">*</span></label>
+                            <label className="form-label">Resourse Name <span className="text-danger">*</span></label>
                             <select
                               className={`form-select ${submitted && errors.trainerId ? "is-invalid" : ""}`}
                               value={form.trainerId}
                               onChange={e => onTrainerChange(e.target.value)}
                             >
-                              <option value="">Select trainer</option>
+                              <option value="">Select Resourse</option>
                               {trainers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                             </select>
                             {submitted && errors.trainerId && <div className="invalid-feedback">{errors.trainerId}</div>}
@@ -490,10 +516,13 @@ export default function TaskMonitoring() {
                             <label className="form-label">Hours Worked <span className="text-danger">*</span></label>
                             <div className="d-flex align-items-center gap-2">
                               <input
+                                type="number"
+                                min="0"
+                                max="24"
                                 className={`form-control ${submitted && errors.hours ? "is-invalid" : ""}`}
                                 value={form.hours}
                                 onChange={e => setForm(f => ({ ...f, hours: e.target.value }))}
-                                placeholder="0-8"
+                                placeholder="0-24"
                               />
                               <div className="form-check ms-2">
                                 <input className="form-check-input" type="checkbox" id="chkOt" checked={form.overtime} onChange={e => setForm(f => ({ ...f, overtime: e.target.checked }))} />
@@ -503,26 +532,35 @@ export default function TaskMonitoring() {
                             {submitted && errors.hours && <div className="invalid-feedback d-block">{errors.hours}</div>}
                             <div className="form-text">Max 8 hrs (unlimited when Overtime is checked).</div>
                           </div>
-
-                          <div className="col-12 col-md-3">
-                            <label className="form-label text-primary">New Tasks</label>
-                            <input className={`form-control ${submitted && errors.newTask ? "is-invalid" : ""}`} value={form.newTask} onChange={e => setForm(f => ({ ...f, newTask: e.target.value }))} />
-                            {submitted && errors.newTask && <div className="invalid-feedback">{errors.newTask}</div>}
+                          <div className="col-12 col-md-4">
+                            <label className="form-label text-info">In Progress</label>
+                            <input type="number" className={`form-control ${submitted && errors.inProgress ? "is-invalid" : ""}`} value={form.inProgress} onChange={e => setForm(f => ({ ...f, inProgress: e.target.value }))} />
+                            {submitted && errors.inProgress && <div className="invalid-feedback">{errors.inProgress}</div>}
                           </div>
-                          <div className="col-12 col-md-3">
+                          <div className="col-12 col-md-4">
+                            <label className="form-label text-primary">Tasks Completed</label>
+                            <input type="number" className={`form-control ${submitted && errors.taskCompleted ? "is-invalid" : ""}`} value={form.taskCompleted} onChange={e => setForm(f => ({ ...f, taskCompleted: e.target.value }))} />
+                            {submitted && errors.taskCompleted && <div className="invalid-feedback">{errors.taskCompleted}</div>}
+                          </div>
+                          <div className="col-12 col-md-4">
                             <label className="form-label text-danger">Reworked</label>
-                            <input className={`form-control ${submitted && errors.reworked ? "is-invalid" : ""}`} value={form.reworked} onChange={e => setForm(f => ({ ...f, reworked: e.target.value }))} />
+                            <input type="number" className={`form-control ${submitted && errors.reworked ? "is-invalid" : ""}`} value={form.reworked} onChange={e => setForm(f => ({ ...f, reworked: e.target.value }))} />
                             {submitted && errors.reworked && <div className="invalid-feedback">{errors.reworked}</div>}
                           </div>
-                          <div className="col-12 col-md-3">
-                            <label className="form-label text-info">PR Passed</label>
-                            <input className={`form-control ${submitted && errors.prPassed ? "is-invalid" : ""}`} value={form.prPassed} onChange={e => setForm(f => ({ ...f, prPassed: e.target.value }))} />
-                            {submitted && errors.prPassed && <div className="invalid-feedback">{errors.prPassed}</div>}
-                          </div>
-                          <div className="col-12 col-md-3">
+                          <div className="col-12 col-md-4">
                             <label className="form-label text-success">Approved</label>
-                            <input className={`form-control ${submitted && errors.approved ? "is-invalid" : ""}`} value={form.approved} onChange={e => setForm(f => ({ ...f, approved: e.target.value }))} />
+                            <input type="number" className={`form-control ${submitted && errors.approved ? "is-invalid" : ""}`} value={form.approved} onChange={e => setForm(f => ({ ...f, approved: e.target.value }))} />
                             {submitted && errors.approved && <div className="invalid-feedback">{errors.approved}</div>}
+                          </div>
+                          <div className="col-12 col-md-4">
+                            <label className="form-label text-danger">Rejected</label>
+                            <input type="number" className={`form-control ${submitted && errors.rejected ? "is-invalid" : ""}`} value={form.rejected} onChange={e => setForm(f => ({ ...f, rejected: e.target.value }))} />
+                            {submitted && errors.rejected && <div className="invalid-feedback">{errors.rejected}</div>}
+                          </div>
+                          <div className="col-12 col-md-4">
+                            <label className="form-label text-primary">Reviewed</label>
+                            <input type="number" className={`form-control ${submitted && errors.reviewed ? "is-invalid" : ""}`} value={form.reviewed} onChange={e => setForm(f => ({ ...f, reviewed: e.target.value }))} />
+                            {submitted && errors.reviewed && <div className="invalid-feedback">{errors.reviewed}</div>}
                           </div>
                         </div>
                       </div>
