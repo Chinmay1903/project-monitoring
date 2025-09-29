@@ -1,6 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import AppLayout from "../components/AppLayout";
 import "./ProjectList.css";
+import { getEmployeeNames,getProjects, addProject,updateProject,deleteProject } from "../../../api/features";
+// import SearchableDropdown from "../components/SearchableDropdown";
 
 /**
  * Project List (single React function)
@@ -11,22 +13,18 @@ import "./ProjectList.css";
  * - Styling via ProjectList.css to match the screenshot
  */
 export default function ProjectList() {
-    // ---- seed data ----
-    const seed = [
-        { id: "GMP002", name: "Billing Migration", manager: "N. Gupta", lead: "P. Mehta", podLead: "M. Iyer", trainer: "Rahul Shah", start: "2025-05-12" },
-        { id: "GMP004", name: "Data Lake ETL", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", trainer: "Vikram Patel", start: "2025-04-28" },
-        { id: "GMP006", name: "Fraud Engine", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", trainer: "Arjun Menon", start: "2025-06-15" },
-        { id: "GMP001", name: "Inventory Revamp", manager: "N. Gupta", lead: "S. Rao", podLead: "M. Iyer", trainer: "Asha Kumar", start: "2025-06-02" },
-        { id: "GMP003", name: "Mobile App v3", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", trainer: "Ishita Bose", start: "2025-07-01" },
-        { id: "GMP005", name: "Partner Portal", manager: "N. Gupta", lead: "S. Rao", podLead: "M. Iyer", trainer: "Neha Das", start: "2025-08-05" },
-    ];
-    const [rows, setRows] = useState(seed);
+
+    const [rows, setRows] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const todayYMD = new Date().toISOString().slice(0, 10);
 
     // ---- filters ----
     const [q, setQ] = useState("");
     const [fManager, setFManager] = useState("All Managers");
     const [fLead, setFLead] = useState("All Leads");
     const [fPodLead, setFPodLead] = useState("All Pod Leads");
+    const [fTrainer, setFTrainer] = useState("All Trainers");
     const [from, setFrom] = useState("");
     const [to, setTo] = useState("");
 
@@ -35,19 +33,109 @@ export default function ProjectList() {
     const [sortDir, setSortDir] = useState("asc");
 
     // ---- modal (single for add/edit) ----
-    const emptyForm = { id: "", name: "", manager: "", lead: "", podLead: "", trainer: "", start: "" };
+    const emptyForm = { id: "", name: "", manager: "", lead: "", podLead: "", trainer: "", start: todayYMD };
     const [showModal, setShowModal] = useState(false);
     const [form, setForm] = useState(emptyForm);
     const [mode, setMode] = useState("add"); // "add" | "edit"
     const [submitted, setSubmitted] = useState(false);
 
-    const managers = useMemo(
-        () => ["N. Gupta", "L. Kulkarni"],
-        []
-    );
-    const leads = useMemo(() => ["P. Mehta", "A. Verma", "S. Rao"], []);
-    const podLeads = useMemo(() => ["M. Iyer", "Z. Khan"], []);
-    const trainers = useMemo(() => ["Rahul Shah", "Vikram Patel", "Arjun Menon", "Asha Kumar", "Ishita Bose", "Neha Das"], []);
+    // const managers = useMemo(
+    //     () => ["N. Gupta", "L. Kulkarni"],
+    //     []
+    // );
+    // const leads = useMemo(() => ["P. Mehta", "A. Verma", "S. Rao"], []);
+    // const podLeads = useMemo(() => ["M. Iyer", "Z. Khan"], []);
+    // const trainers = useMemo(() => ["Rahul Shah", "Vikram Patel", "Arjun Menon", "Asha Kumar", "Ishita Bose", "Neha Das"], []);
+    const [managers, setManagers] = useState([]);
+    const [leads, setLeads] = useState([]);
+    const [podLeads, setPodLeads] = useState([]);
+    const [trainers, setTrainers] = useState([]);
+    const [managersList, setManagersList] = useState([]);
+    const [podLeadsList, setPodLeadsList] = useState([]);
+    const [trainersList, setTrainersList] = useState([]);
+
+    // ---- load data from API ----
+    useEffect(() => {
+        const loadData = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const [projRes, namesRes] = await Promise.all([getProjects(), getEmployeeNames()]);
+                // projects
+                const projectData = Array.isArray(projRes?.data) ? projRes.data.map(p => ({
+                    ...emptyForm,
+                    id: p.id ?? p.project_id ?? "",
+                    name: (p.name ?? p.project_name ?? "").toString(),
+                    manager: p.manager ?? p.gms_manager ?? "",
+                    lead: p.lead ?? p.lead_name ?? "",
+                    podLead: p.podLead ?? p.pod_name ?? p.pod_lead_name ?? "",
+                    trainer: p.trainer ?? p.trainer_name ?? "",
+                    start: (p.start ?? p.create_at ?? "").toString().split(' ')[0] || "",
+                })) : [];
+                setRows(projectData);
+                // derive distinct lists from projectData (support multiple possible field names)
+                const mgrSet = new Set();
+                const leadSet = new Set();
+                const podSet = new Set();
+                const trainerSet = new Set();
+
+                projectData.forEach(p => {
+                    const mgr = p.gms_manager ?? p.manager ?? p.manager_name ?? p.gmsManager ?? "";
+                    const lead = p.lead_name ?? p.lead ?? p.turing_manager ?? "";
+                    const pod = p.pod_lead_name ?? p.podLead ?? p.pod_lead ?? "";
+                    const tr = p.trainer_name ?? p.trainer ?? p.trainer_name ?? "";
+                    if (mgr) mgrSet.add(String(mgr).trim());
+                    if (lead) leadSet.add(String(lead).trim());
+                    if (pod) podSet.add(String(pod).trim());
+                    if (tr) trainerSet.add(String(tr).trim());
+                });
+
+                setManagers(Array.from(mgrSet).filter(Boolean).sort());
+                setLeads(Array.from(leadSet).filter(Boolean).sort());
+                setPodLeads(Array.from(podSet).filter(Boolean).sort());
+                setTrainers(Array.from(trainerSet).filter(Boolean).sort());
+
+                console.log("Loaded projects from API:", projectData, managers, leads, podLeads, trainers);
+                
+                // --- process employee names response and split into manager / podLead / trainer lists ---
+                const employees = Array.isArray(namesRes?.data) ? namesRes.data : [];
+
+                const managersFromEmployees = Array.from(new Set(
+                    employees
+                        .filter(e => (e.role_name || "").toLowerCase().includes("manager"))
+                        .map(e => e.full_name)
+                )).sort();
+
+                const podLeadsFromEmployees = Array.from(new Set(
+                    employees
+                        .filter(e => (e.role_name || "").toLowerCase().includes("pod lead"))
+                        .map(e => e.full_name)
+                )).sort();
+
+                // "apart from manager all in trainer" -> include every name whose role is NOT 'manager'
+                const trainersFromEmployees = Array.from(new Set(
+                    employees
+                        .filter(e => (e.role_name || "").toLowerCase() !== "manager")
+                        .map(e => e.full_name)
+                )).sort();
+
+                // set component lists used by selects
+                setManagersList(managersFromEmployees);
+                setPodLeadsList(podLeadsFromEmployees);
+                setTrainersList(trainersFromEmployees);
+                console.log("Employee names:", employees, managersFromEmployees, podLeadsFromEmployees, trainersFromEmployees);
+                
+                
+            } catch (err) {
+                console.error("Failed loading projects or employee names", err);
+                setError("Failed to load data");
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadData();
+    }, []);
+
 
     // ---- derived: filtered + sorted ----
     const filtered = useMemo(() => {
@@ -56,8 +144,9 @@ export default function ProjectList() {
         if (fManager !== "All Managers") d = d.filter(r => r.manager === fManager);
         if (fLead !== "All Leads") d = d.filter(r => r.lead === fLead);
         if (fPodLead !== "All Pod Leads") d = d.filter(r => r.podLead === fPodLead);
+        if (fTrainer !== "All Trainers") d = d.filter(r => r.trainer === fTrainer);
         if (from) d = d.filter(r => r.start >= from);
-        if (to) d = d.filter(r => r.start <= to);
+        // if (to) d = d.filter(r => r.start <= to);
 
         d.sort((a, b) => {
             const A = (a[sortKey] ?? "").toString().toLowerCase();
@@ -67,7 +156,7 @@ export default function ProjectList() {
             return 0;
         });
         return d;
-    }, [rows, q, fManager, fLead, fPodLead, from, to, sortKey, sortDir]);
+    }, [rows, q, fManager, fLead, fPodLead, fTrainer, from, to, sortKey, sortDir]);
 
     // ---- helpers ----
     const resetFilters = () => {
@@ -77,15 +166,15 @@ export default function ProjectList() {
         if (sortKey === key) setSortDir(d => (d === "asc" ? "desc" : "asc"));
         else { setSortKey(key); setSortDir("asc"); }
     };
-    const nextId = () => {
-        const max = rows.reduce((acc, r) => Math.max(acc, parseInt(r.id.replace("GMP", ""), 10)), 0);
-        const n = String(max + 1).padStart(3, "0");
-        return `GMP${n}`;
-    };
+    // const nextId = () => {
+    //     const max = rows.reduce((acc, r) => Math.max(acc, parseInt(r.id.replace("GMP", ""), 10)), 0);
+    //     const n = String(max + 1).padStart(3, "0");
+    //     return `GMP${n}`;
+    // };
 
     // ---- CRUD ----
     const onAddClick = () => {
-        setForm({ ...emptyForm, id: nextId() });
+        setForm({ ...emptyForm });
         setMode("add"); setSubmitted(false);
         setShowModal(true);
     };
@@ -94,9 +183,17 @@ export default function ProjectList() {
         setMode("edit"); setSubmitted(false);
         setShowModal(true);
     };
-    const onDelete = (id) => {
-        if (window.confirm("Delete this project?")) {
+    const onDelete = async (id) => {
+        if (!window.confirm("Delete this project?")) return;
+        try {
+            // call API to delete
+            await deleteProject(id);
+            // update local state
             setRows(prev => prev.filter(r => r.id !== id));
+        } catch (err) {
+            console.error("Delete failed", err);
+            setError("Failed to delete project");
+            alert("Failed to delete project");
         }
     };
 
@@ -113,18 +210,88 @@ export default function ProjectList() {
     }, [form]);
     const isValid = Object.keys(errors).length === 0;
 
-    const onSave = (e) => {
+    const onSave = async (e) => {
         e.preventDefault();
         setSubmitted(true);
         if (!isValid) return;
 
-        if (mode === "add") setRows(prev => [{ ...form }, ...prev]);
-        else setRows(prev => prev.map(r => r.id === form.id ? { ...form } : r));
+        const payload = {
+            project_name: form.name,
+            gms_manager: form.manager,
+            lead_name: form.lead,
+            pod_name: form.podLead,
+            trainer_name: form.trainer
+        };
 
-        setShowModal(false);
+        try {
+            if (mode === "add") {
+                const res = await addProject(payload);
+                console.log("Add project response", res);
+                
+                // prefer API returned project object; fallback to local form data
+                const created = res?.data ?? res ?? { ...form, id: form.id || `GMP${Date.now()}` , name: payload.project_name };
+                // normalize stored shape to match rows (id, name, manager, lead, podLead, trainer, start)
+                const row = {
+                    id: created.id ?? created.project_id ?? created.project_id ?? created._id ?? created.projectId ?? created.employees_id ?? form.id,
+                    name: created.project_name ?? created.name ?? form.name,
+                    manager: created.gms_manager ?? form.manager,
+                    lead: created.lead_name ?? form.lead,
+                    podLead: created.pod_name ?? form.podLead,
+                    trainer: created.trainer_name ?? form.trainer,
+                    start: form.start
+                };
+                setRows(prev => [row, ...prev]);
+            } else {
+                const res = await updateProject(form.id, payload);
+                console.log("Update project response", res);
+                // prefer API returned project object; fallback to local form data
+                const updated = res?.data ?? res ?? payload;
+                setRows(prev => prev.map(r => {
+                    if (r.id === form.id) {
+                        return {
+                            ...r,
+                            name: updated.project_name ?? form.name,
+                            manager: updated.gms_manager ?? form.manager,
+                            lead: updated.lead_name ?? form.lead,
+                            podLead: updated.pod_name ?? form.podLead,
+                            trainer: updated.trainer_name ?? form.trainer,
+                            start: form.start
+                        };
+                    }
+                    return r;
+                }));
+            }
+
+            setShowModal(false);
+        } catch (err) {
+            console.error("Save project failed", err);
+            setError("Failed to save project");
+            alert("Failed to save project");
+        }
     };
 
     // ---- view ----
+    if (loading) {
+        return (
+            <AppLayout>
+                <div className="projects-page">
+                    <div className="text-center py-5">
+                        <div className="spinner-border text-primary" role="status"><span className="visually-hidden">Loading...</span></div>
+                    </div>
+                </div>
+            </AppLayout>
+        );
+    }
+
+    if (error) {
+        return (
+            <AppLayout>
+                <div className="projects-page">
+                    <div className="alert alert-danger my-4">{error}</div>
+                </div>
+            </AppLayout>
+        );
+    }
     return (
         <AppLayout>
             <div className="projects-page">
@@ -167,8 +334,13 @@ export default function ProjectList() {
                                 {podLeads.map(m => <option key={m}>{m}</option>)}
                             </select>
 
+                            <select className="form-select filter-item" value={fTrainer} onChange={(e) => setFTrainer(e.target.value)}>
+                                <option>All Trainers</option>
+                                {trainers.map(m => <option key={m}>{m}</option>)}
+                            </select>
+
                             <input type="date" className="form-control filter-item" value={from} onChange={(e) => setFrom(e.target.value)} placeholder="From Date" />
-                            <input type="date" className="form-control filter-item" value={to} onChange={(e) => setTo(e.target.value)} placeholder="To Date" />
+                            {/* <input type="date" className="form-control filter-item" value={to} onChange={(e) => setTo(e.target.value)} placeholder="To Date" /> */}
 
                             <button className="btn btn-outline-secondary filter-item" onClick={resetFilters}>
                                 <i className="bi bi-arrow-counterclockwise me-1" /> Reset
@@ -197,8 +369,8 @@ export default function ProjectList() {
                                         <td className="text-muted">{r.id}</td>
                                         <td className="fw-semibold">{r.name}</td>
                                         <td>{r.manager}</td>
-                                        <td><u>{r.lead}</u></td>
-                                        <td><u>{r.podLead}</u></td>
+                                        <td>{r.lead}</td>
+                                        <td>{r.podLead}</td>
                                         <td>{r.trainer}</td>
                                         <td>{r.start}</td>
                                         <td className="text-end">
@@ -248,41 +420,47 @@ export default function ProjectList() {
                                                     </div>
 
                                                     <div className="col-12 col-md-6">
-                                                        <label className="form-label">Manager Name <span className="text-danger">*</span></label>
-                                                        <select
-                                                            className={`form-select ${submitted && errors.manager ? "is-invalid" : ""}`}
+                                                        <label className="form-label">GMS Manager Name <span className="text-danger">*</span></label>
+                                                        <input
+                                                            list="managersList"
+                                                            className={`form-control ${submitted && errors.manager ? "is-invalid" : ""}`}
+                                                            placeholder="Enter GMS manager name"
                                                             value={form.manager}
                                                             onChange={(e) => setForm({ ...form, manager: e.target.value })}
-                                                        >
-                                                            <option value="">Select manager</option>
-                                                            {managers.map(m => <option key={m}>{m}</option>)}
-                                                        </select>
+                                                        />
+                                                        <datalist id="managersList">
+                                                            {managersList.map((name) => (
+                                                                <option key={name} value={name} />
+                                                            ))}
+                                                        </datalist>
                                                         {submitted && errors.manager && <div className="invalid-feedback">{errors.manager}</div>}
                                                     </div>
 
                                                     <div className="col-12 col-md-3">
-                                                        <label className="form-label">Lead Name <span className="text-danger">*</span></label>
-                                                        <select
-                                                            className={`form-select ${submitted && errors.lead ? "is-invalid" : ""}`}
+                                                        <label className="form-label">Turing Manager Name <span className="text-danger">*</span></label>
+                                                        <input
+                                                            className={`form-control ${submitted && errors.lead ? "is-invalid" : ""}`}
+                                                            placeholder="Enter Turing Manager name"
                                                             value={form.lead}
                                                             onChange={(e) => setForm({ ...form, lead: e.target.value })}
-                                                        >
-                                                            <option value="">Select lead</option>
-                                                            {leads.map(m => <option key={m}>{m}</option>)}
-                                                        </select>
+                                                        />
                                                         {submitted && errors.lead && <div className="invalid-feedback">{errors.lead}</div>}
                                                     </div>
 
                                                     <div className="col-12 col-md-3">
                                                         <label className="form-label">Pod Lead Name <span className="text-danger">*</span></label>
-                                                        <select
-                                                            className={`form-select ${submitted && errors.podLead ? "is-invalid" : ""}`}
+                                                        <input
+                                                            list="podLeadsList"
+                                                            className={`form-control ${submitted && errors.podLead ? "is-invalid" : ""}`}
+                                                            placeholder="Enter Pod Lead name"
                                                             value={form.podLead}
                                                             onChange={(e) => setForm({ ...form, podLead: e.target.value })}
-                                                        >
-                                                            <option value="">Select pod lead</option>
-                                                            {podLeads.map(m => <option key={m}>{m}</option>)}
-                                                        </select>
+                                                        />
+                                                        <datalist id="podLeadsList">
+                                                            {podLeadsList.map((name) => (
+                                                                <option key={name} value={name} />
+                                                            ))}
+                                                        </datalist>
                                                         {submitted && errors.podLead && <div className="invalid-feedback">{errors.podLead}</div>}
                                                     </div>
 
@@ -294,7 +472,7 @@ export default function ProjectList() {
                                                             onChange={(e) => setForm({ ...form, trainer: e.target.value })}
                                                         >
                                                             <option value="">Select trainer</option>
-                                                            {trainers.map(m => <option key={m}>{m}</option>)}
+                                                            {trainersList.map(m => <option key={m}>{m}</option>)}
                                                         </select>
                                                         {submitted && errors.trainer && <div className="invalid-feedback">{errors.trainer}</div>}
                                                     </div>
