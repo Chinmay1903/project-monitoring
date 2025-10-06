@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import AppLayout from "../components/AppLayout";
 import "./ProjectList.css";
 import { getEmployeeNames,getProjects, addProject,updateProject,deleteProject } from "../../../api/features";
@@ -31,12 +31,16 @@ export default function ProjectList() {
     // ---- sort ----
     const [sortKey, setSortKey] = useState("name");
     const [sortDir, setSortDir] = useState("asc");
+    const toggleSort = (key) => {
+        if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+        else { setSortKey(key); setSortDir("asc"); }
+    };
 
     // ---- modal (single for add/edit) ----
     const emptyForm = { id: "", name: "", manager: "", lead: "", podLead: "", trainer: "", start: todayYMD };
     const [showModal, setShowModal] = useState(false);
     const [form, setForm] = useState(emptyForm);
-    const [mode, setMode] = useState("add"); // "add" | "edit"
+    const [mode, setMode] = useState("add");
     const [submitted, setSubmitted] = useState(false);
 
     // const managers = useMemo(
@@ -162,10 +166,7 @@ export default function ProjectList() {
     const resetFilters = () => {
         setQ(""); setFManager("All Managers"); setFLead("All Leads"); setFPodLead("All Pod Leads"); setFrom(""); setTo("");
     };
-    const toggleSort = (key) => {
-        if (sortKey === key) setSortDir(d => (d === "asc" ? "desc" : "asc"));
-        else { setSortKey(key); setSortDir("asc"); }
-    };
+
     // const nextId = () => {
     //     const max = rows.reduce((acc, r) => Math.max(acc, parseInt(r.id.replace("GMP", ""), 10)), 0);
     //     const n = String(max + 1).padStart(3, "0");
@@ -179,9 +180,7 @@ export default function ProjectList() {
         setShowModal(true);
     };
     const onEdit = (r) => {
-        setForm({ ...r });
-        setMode("edit"); setSubmitted(false);
-        setShowModal(true);
+        setForm({ ...r }); setMode("edit"); setSubmitted(false); setShowModal(true);
     };
     const onDelete = async (id) => {
         if (!window.confirm("Delete this project?")) return;
@@ -270,6 +269,20 @@ export default function ProjectList() {
         }
     };
 
+    const normalize = (s) => s?.replace("T", " ").replace("Z", "") || "";
+
+    // Display Date as DD-MM-YYYY
+    const toYMD = (ymd) => {
+        ymd =normalize(ymd);
+        return ymd ? ymd.slice(0, 10) : "";
+    };
+    const toDMY = (dmy) => {
+        dmy = normalize(dmy);
+        if (!dmy) return "";
+        const [y, m, d] = dmy.split(" ")[0].split("-");
+        return (d && m && y) ? `${d}-${m}-${y}` : dmy;
+    };
+
     // ---- view ----
     if (loading) {
         return (
@@ -294,40 +307,55 @@ export default function ProjectList() {
     }
     return (
         <AppLayout>
-            <div className="projects-page">
-                <div className="projects-actions d-flex justify-content-end">
-                    <button className="btn btn-primary" onClick={onAddClick} title="Add Project">
-                        <i className="bi bi-plus-lg" />
+            <div className="pl-scope px-2 py-2">
+                {/* Add button: icon-first with hover label */}
+                <div className="d-flex justify-content-end mb-2">
+                    <button className="btn btn-primary action-btn" onClick={onAddClick} title="Add Project">
+                        <i className="bi bi-plus-circle" /><span className="label">Add Project</span>
                     </button>
                 </div>
 
+                <div className="card shadow-lg bg-body-tertiary rounded-3 border-3 shadow">
+                    <div className="card-header bg-warning-subtle text-warning-emphasis">
+                        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
 
-                {/* TITLE + FILTER BAR */}
-                <div className="projects-card card shadow-sm">
-                    <div className="projects-toolbar d-flex justify-content-between">
-                        <div className="title">Projects</div>
+                            {/* LEFT: Title + SEARCH inline */}
+                            <div className="d-flex align-items-center gap-5 flex-nowrap">
+                                <h5 className="mb-0">Projects</h5>
 
-                        <div className="filters">
-                            {/* search / All Projects */}
-                            <div className="input-group filter-item">
-                                <span className="input-group-text"><i className="bi bi-funnel" /></span>
-                                <input
-                                    className="form-control"
-                                    placeholder="All Projects (search by name)"
-                                    value={q}
-                                    onChange={(e) => setQ(e.target.value)}
-                                />
+                                {/* Search right next to the title */}
+                                <div className="input-group header-search">
+                                    <span className="input-group-text bg-white">
+                                        <i className="bi bi-funnel" />
+                                    </span>
+                                    <input
+                                        className="form-control"
+                                        placeholder="All Projects (search by name)"
+                                        value={q}
+                                        onChange={(e) => setQ(e.target.value)}
+                                    />
+                                </div>
                             </div>
 
-                            <select className="form-select filter-item" value={fManager} onChange={(e) => setFManager(e.target.value)}>
-                                <option>All GMS Managers</option>
-                                {managers.map(m => <option key={m}>{m}</option>)}
-                            </select>
+                            {/* RIGHT: Filters */}
+                            <div className="d-flex align-items-center filter-wrap">
+                                <select
+                                    className="form-select auto-size"
+                                    value={fManager}
+                                    onChange={(e) => setFManager(e.target.value)}
+                                >
+                                    <option>All Managers</option>
+                                    {managers.map((m) => <option key={m}>{m}</option>)}
+                                </select>
 
-                            <select className="form-select filter-item" value={fLead} onChange={(e) => setFLead(e.target.value)}>
-                                <option>All Turing Manager</option>
-                                {leads.map(m => <option key={m}>{m}</option>)}
-                            </select>
+                                <select
+                                    className="form-select auto-size"
+                                    value={fLead}
+                                    onChange={(e) => setFLead(e.target.value)}
+                                >
+                                    <option>All Leads</option>
+                                    {leads.map((m) => <option key={m}>{m}</option>)}
+                                </select>
 
                             <select className="form-select filter-item" value={fPodLead} onChange={(e) => setFPodLead(e.target.value)}>
                                 <option>All Pod Leads</option>
@@ -348,19 +376,20 @@ export default function ProjectList() {
                         </div>
                     </div>
 
+
                     {/* TABLE */}
-                    <div className="table-responsive">
-                        <table className="table table-hover projects-table">
-                            <thead>
+                    <div className="table-responsive bg-warning-subtle text-warning-emphasis rounded shadow">
+                        <table className="table table-info table-striped-columns table-hover align-middle mb-0 has-actions">
+                            <thead className="table-success">
                                 <tr>
                                     <Th label="ID" k="id" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                                     <Th label="Project Name" k="name" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                                    <Th label="Gms Manager" k="manager" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                                    <Th label="Turing Manager" k="lead" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                                    <Th label="Manager" k="manager" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                                    <Th label="Lead" k="lead" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                                     <Th label="Pod Lead" k="podLead" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                                     <Th label="Trainer" k="trainer" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                                     <Th label="Start Date" k="start" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                                    <th style={{ width: 110 }} className="text-end">Actions</th>
+                                    <th className="actions-col">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -372,14 +401,22 @@ export default function ProjectList() {
                                         <td>{r.lead}</td>
                                         <td>{r.podLead}</td>
                                         <td>{r.trainer}</td>
-                                        <td>{r.start}</td>
-                                        <td className="text-end">
-                                            <div className="btn-group btn-group-sm" role="group">
-                                                <button className="btn btn-outline-secondary" onClick={() => onEdit(r)} title="Edit">
-                                                    <i className="bi bi-pencil-square" />
+                                        <td>{toDMY(r.start)}</td>
+                                        <td className="actions-col">
+                                            <div className="action-wrap">
+                                                <button
+                                                    className="btn btn-outline-secondary btn-sm action-btn"
+                                                    onClick={() => onEdit(r)}
+                                                    title="Edit"
+                                                >
+                                                    <i className="bi bi-pencil-square" /><span className="label">Edit</span>
                                                 </button>
-                                                <button className="btn btn-outline-danger" onClick={() => onDelete(r.id)} title="Delete">
-                                                    <i className="bi bi-trash" />
+                                                <button
+                                                    className="btn btn-outline-danger btn-sm action-btn"
+                                                    onClick={() => onDelete(r.id)}
+                                                    title="Delete"
+                                                >
+                                                    <i className="bi bi-trash3" /><span className="label">Delete</span>
                                                 </button>
                                             </div>
                                         </td>
@@ -482,7 +519,7 @@ export default function ProjectList() {
                                                         <input
                                                             type="date"
                                                             className={`form-control ${submitted && errors.start ? "is-invalid" : ""}`}
-                                                            value={form.start}
+                                                            value={from.start}
                                                             onChange={(e) => setForm({ ...form, start: e.target.value })}
                                                         />
                                                         {submitted && errors.start && <div className="invalid-feedback">{errors.start}</div>}
@@ -499,24 +536,39 @@ export default function ProjectList() {
                                 </div>
                             </div>
                         </div>
-                        {/* lightweight backdrop */}
                         <div className="modal-backdrop fade show"></div>
                     </>
                 )}
             </div>
+        </div>
         </AppLayout>
     );
 }
 
-/* --- small helper header cell (inside this file to keep single-function feel) */
+/* -- Sortable header cell (CSHTML-like UI) -- */
 function Th({ label, k, sortKey, sortDir, onSort }) {
     const active = sortKey === k;
+    const icon = active ? (sortDir === "asc" ? "bi-arrow-up text-primary" : "bi-arrow-down text-primary") : "bi-arrow-down-up";
     return (
-        <th role="button" onClick={() => onSort(k)}>
-            <span className="me-1">{label}</span>
-            <span className={"sort " + (active ? sortDir : "")}>
-                <i className="bi bi-arrow-down-up" />
-            </span>
+        <th className={`sortable ${active ? "active" : ""}`}>
+            <button type="button" className="sort-btn" onClick={() => onSort(k)} title={`Sort by ${label}`}>
+                {label} <i className={`bi ${icon} sort-icon`} />
+            </button>
         </th>
     );
+}
+
+// Utility: fit a <select> to its selected option text
+function autosizeSelect(el) {
+    if (!el) return;
+    const span = document.createElement("span");
+    span.style.visibility = "hidden";
+    span.style.whiteSpace = "pre";
+    span.style.position = "absolute";
+    span.textContent = el.options[el.selectedIndex]?.text || "";
+    document.body.appendChild(span);
+    // base + caret + padding buffer
+    const w = Math.ceil(span.getBoundingClientRect().width + 48);
+    el.style.width = `${w}px`;
+    document.body.removeChild(span);
 }

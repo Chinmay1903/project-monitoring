@@ -4,7 +4,7 @@ import "./ResourceList.css";
 import { getRoles, getEmployees, addEmployee, updateEmployee, deleteEmployee } from "../../../api/features";
 
 export default function ResourceList() {
-    const [roles, setRoles] = useState([]); 
+    const [roles, setRoles] = useState([]);
     const [roleFilter, setRoleFilter] = useState(["All"]); // Initialize with "All"
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -45,6 +45,8 @@ export default function ResourceList() {
                     state: emp.state,
                     city: emp.city,
                     start: emp.create_at?.split(' ')[0] || '', // Take only the date part
+                    end: emp.inactive_at || "",  // [NEW] end date field
+                    status: String(emp.status ?? "1"),
                 }));
                 setRows(employeeData);
             } catch (error) {
@@ -74,10 +76,11 @@ export default function ResourceList() {
         state: "",
         city: "",
         start: "",
+        end: ""   // [NEW] end date field
     };
 
     // ---------- filters ----------
-    const [roleTab, setRoleTab] = useState("All"); // All | Reviewers | Trainer
+    const [roleTab, setRoleTab] = useState("All");
     const [q, setQ] = useState("");
     // const clearFilters = () => { setRoleTab("All"); setQ(""); };
 
@@ -88,6 +91,7 @@ export default function ResourceList() {
         if (sortKey === key) setSortDir(d => (d === "asc" ? "desc" : "asc"));
         else { setSortKey(key); setSortDir("asc"); }
     };
+    const [showInactive, setShowInactive] = useState(false);
 
     // ---------- modal ----------
     const [showModal, setShowModal] = useState(false);
@@ -147,6 +151,7 @@ export default function ResourceList() {
         if (!form.skill) e.skill = "Skill is required.";
         if (!form.exp) e.exp = "Experience is required.";
         if (!form.start) e.start = "Start date is required.";
+        if (form.status === "0" && !form.end) e.end = "Inactive date is required.";
         return e;
     }, [form]);
     const isValid = Object.keys(errors).length === 0;
@@ -177,6 +182,7 @@ export default function ResourceList() {
                     city: form.city,
                     status: "1",
                     create_at: form.start,
+                    inactive_at: form.end || null  // [NEW] end date field
                 });
 
                 if (response.data) {
@@ -197,7 +203,8 @@ export default function ResourceList() {
                     qualification: form.qualification,
                     state: form.state,
                     city: form.city,
-                    status: "1"
+                    status: form.status || "1",
+                    inactive_at: form.end || null  // [NEW] end date field
                 });
 
                 if (response.data) {
@@ -225,6 +232,11 @@ export default function ResourceList() {
                 r.email.toLowerCase().includes(qq)
             );
         }
+        if (showInactive) {
+            d = d.filter(r => (r.end && (r.status === "0")));
+        } else {
+            d = d.filter(r => !(r.end && (r.status === "0")));
+        }
         d.sort((a, b) => {
             const A = (a[sortKey] ?? "").toString().toLowerCase();
             const B = (b[sortKey] ?? "").toString().toLowerCase();
@@ -233,17 +245,23 @@ export default function ResourceList() {
             return 0;
         });
         return d;
-    }, [rows, roleTab, q, sortKey, sortDir]);
+    }, [rows, roleTab, q, sortKey, sortDir, showInactive]);
 
-    // ---------- tiny header cell helper ----------
+    useEffect(() => {
+        if (!showInactive && sortKey === "end") {
+            setSortKey("name"); // [NEW] fallback sort key when end column is hidden
+        }
+    }, [showInactive, sortKey]);
+
+    // ---------- header cell ----------
     const Th = ({ label, k }) => {
         const active = sortKey === k;
+        const icon = active ? (sortDir === "asc" ? "bi-caret-up-fill" : "bi-caret-down-fill") : "bi-arrow-down-up";
         return (
-            <th role="button" onClick={() => toggleSort(k)}>
-                <span className="me-1">{label}</span>
-                <span className={"sort " + (active ? sortDir : "")}>
-                    <i className="bi bi-arrow-down-up" />
-                </span>
+            <th className={`sortable ${active ? "active" : ""}`}>
+                <button type="button" className="sort-btn" onClick={() => toggleSort(k)} title={`Sort by ${label}`}>
+                    {label} <i className={`bi ${icon} sort-icon`} />
+                </button>
             </th>
         );
     };
@@ -252,12 +270,8 @@ export default function ResourceList() {
     if (loading) {
         return (
             <AppLayout>
-                <div className="resources-page">
-                    <div className="text-center py-4">
-                        <div className="spinner-border text-primary" role="status">
-                            <span className="visually-hidden">Loading...</span>
-                        </div>
-                    </div>
+                <div className="p-3 text-center">
+                    <div className="spinner-border text-primary" role="status"><span className="visually-hidden">Loading...</span></div>
                 </div>
             </AppLayout>
         );
@@ -266,59 +280,79 @@ export default function ResourceList() {
     if (error) {
         return (
             <AppLayout>
-                <div className="resources-page">
-                    <div className="alert alert-danger" role="alert">
-                        {error}
-                    </div>
-                </div>
+                <div className="p-3"><div className="alert alert-danger">{error}</div></div>
             </AppLayout>
         );
     }
 
+    const normalize = (s) => s?.replace("T", " ").replace("Z", "") || "";
+
+    // Display Date as DD-MM-YYYY
+    const toYMD = (ymd) => {
+        ymd =normalize(ymd);
+        return ymd ? ymd.slice(0, 10) : "";
+    };
+    const toDMY = (dmy) => {
+        dmy = normalize(dmy);
+        if (!dmy) return "";
+        const [y, m, d] = dmy.split(" ")[0].split("-");
+        return (d && m && y) ? `${d}-${m}-${y}` : dmy;
+    };
+
     return (
         <AppLayout>
-            <div className="resources-page">
-                <div className="resources-actions d-flex justify-content-end">
-                    <button className="btn btn-primary" onClick={onAdd}>
-                        <i className="bi bi-plus-lg me-1" />
+            <div className="rl-scope px-2 py-2">
+                {/* Add button (icon-first) */}
+                <div className="d-flex justify-content-end mb-2">
+                    <button className="btn btn-primary action-btn" onClick={onAdd}>
+                        <i className="bi bi-plus-circle" />
+                        <span className="label">Add User</span>
                     </button>
                 </div>
-                <div className="resources-card card shadow-sm">
-                    <div className="resources-toolbar">
-                        <div className="left">
-                            <span className="title">Resources</span>
 
-                            <div className="btn-group" role="group" aria-label="role filter">
+                {/* Card */}
+                <div className="card bg-body-tertiary border-3 rounded-3 shadow">
+                    <div className="card-header bg-warning-subtle text-warning-emphasis">
+                        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div className="d-flex align-items-center gap-3 flex-wrap">
+                                <h5 className="mb-0">Resources</h5>
+                                <div className="btn-group" role="group" aria-label="role filter">
                                 {roleFilter.map(role => (
-                                    <button
-                                        key={role}
-                                        type="button"
-                                        className={`btn btn-outline-primary ${roleTab === role ? "active" : ""}`}
+                                        <button
+                                            key={role}
+                                            type="button"
+                                        className={`btn btn-sm ${roleTab === role ? "btn-outline-danger active" : "btn-outline-secondary"}`}
+                                            aria-pressed={roleTab === role}
                                         onClick={() => setRoleTab(role)}>
                                         {role === "All" ? "All" : `${role}s`}
-                                    </button>
-                                ))}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="form-check form-switch m-0">
+                                    <input
+                                        className="form-check-input"
+                                        type="checkbox"
+                                        id="switchInactive"
+                                        checked={showInactive}
+                                        onChange={(e) => setShowInactive(e.target.checked)}
+                                    />
+                                    <label className="form-check-label" htmlFor="switchInactive">
+                                        Show inactive
+                                    </label>
+                                </div>
                             </div>
 
-                            {/* <button type="button" className="btn btn-outline-secondary btn-sm ms-2" onClick={clearFilters}>
-                                <i className="bi bi-x-circle me-1" /> Clear
-                            </button> */}
-                        </div>
-
-                        <div className="right">
-                            <div className="input-group search">
-                                <span className="input-group-text"><i className="bi bi-search" /></span>
-                                <input className="form-control"
-                                    placeholder="Search name / id / email"
-                                    value={q}
-                                    onChange={e => setQ(e.target.value)} />
+                            <div className="input-group" style={{ maxWidth: 360 }}>
+                                <span className="input-group-text bg-white"><i className="bi bi-search" /></span>
+                                <input type="text" className="form-control" placeholder="Search name / id / email" value={q} onChange={e => setQ(e.target.value)} />
                             </div>
                         </div>
                     </div>
 
-                    <div className="table-responsive">
-                        <table className="table table-hover resources-table">
-                            <thead>
+                    {/* Table */}
+                    <div className="table-responsive bg-warning-subtle text-warning-emphasis rounded shadow">
+                        <table className="table table-info table-striped-columns table-hover align-middle mb-0 has-actions">
+                            <thead className="table-success">
                                 <tr>
                                     <Th label="ID" k="id" />
                                     <Th label="Name" k="name" />
@@ -330,30 +364,31 @@ export default function ResourceList() {
                                     <Th label="Skill" k="skill" />
                                     <Th label="Experience" k="exp" />
                                     <Th label="Start Date" k="start" />
-                                    <th style={{ width: 110 }} className="text-end">Actions</th>
+                                    {showInactive && <Th label="End Date" k="end" />}
+                                    <th className="actions-col">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {filtered.map(r => (
                                     <tr key={r.id}>
                                         <td className="text-muted">{r.id}</td>
-                                        {/* <td className="fw-semibold"><a href="#0" className="name-link">{r.name}</a></td> */}
                                         <td className="fw-semibold">{r.name}</td>
                                         <td>{r.roleName}</td>
-                                        <td>{r.gender}</td>
-                                        <td className="email-cell"><span>{r.email}</span></td>
+                                        <td>{r.gender || "-"}</td>
+                                        <td><span className="text-break d-inline-block" style={{ maxWidth: 220 }}>{r.email}</span></td>
                                         <td>{r.mobile}</td>
                                         <td>{r.designation}</td>
                                         <td>{r.skill}</td>
                                         <td>{r.exp}</td>
-                                        <td>{r.start}</td>
-                                        <td className="text-end">
-                                            <div className="btn-group btn-group-sm" role="group">
-                                                <button className="btn btn-outline-secondary" onClick={() => onEdit(r)} title="Edit">
-                                                    <i className="bi bi-pencil-square" />
+                                        <td>{toDMY(r.start)}</td>
+                                        {showInactive && <td>{r.end || "-"}</td>}
+                                        <td className="actions-col">
+                                            <div className="action-wrap" role="group" aria-label="Actions">
+                                                <button className="btn btn-outline-secondary btn-sm action-btn" onClick={() => onEdit(r)} title="Edit">
+                                                    <i className="bi bi-pencil-square" /><span className="label">Edit</span>
                                                 </button>
-                                                <button className="btn btn-outline-danger" onClick={() => onDelete(r.id)} title="Delete">
-                                                    <i className="bi bi-trash" />
+                                                <button className="btn btn-outline-danger btn-sm action-btn" onClick={() => onDelete(r.id)} title="Delete">
+                                                    <i className="bi bi-trash3" /><span className="label">Delete</span>
                                                 </button>
                                             </div>
                                         </td>
@@ -373,7 +408,7 @@ export default function ResourceList() {
                         <div className="modal fade show d-block" tabIndex="-1" role="dialog" aria-modal="true">
                             <div className="modal-dialog modal-xl modal-dialog-centered">
                                 <div className="modal-content">
-                                    <div className="modal-header">
+                                    <div className="modal-header border-0 border-bottom">
                                         <h5 className="modal-title">{mode === "add" ? "Add Resource" : "Edit Resource"}</h5>
                                         <button type="button" className="btn-close" aria-label="Close" onClick={() => setShowModal(false)} />
                                     </div>
@@ -498,20 +533,58 @@ export default function ResourceList() {
                                                             onChange={(e) => setForm({ ...form, city: e.target.value })} />
                                                     </div>
 
-                                                    <div className="col-12 col-md-4">
+                                                    <div className="col-12 col-md-3">
                                                         <label className="form-label">Start Date <span className="text-danger">*</span></label>
-                                                        <input type="date"
+                                                        <input type="date" 
                                                             className={`form-control ${submitted && errors.start ? "is-invalid" : ""}`}
                                                             value={form.start}
                                                             onChange={(e) => setForm({ ...form, start: e.target.value })} />
                                                         {submitted && errors.start && <div className="invalid-feedback">{errors.start}</div>}
                                                         <div className="form-text">Default to today; format dd/mm/yyyy ({ddmmyyyy})</div>
                                                     </div>
+                                                    {mode === "edit" && (
+                                                        <div className="col-12 col-md-2">
+                                                            <div className="form-check mt-4">
+                                                                <input
+                                                                    className="form-check-input"
+                                                                    type="checkbox"
+                                                                    id="inactiveChk"
+                                                                    checked={form.status === "0"}
+                                                                    onChange={(e) => {
+                                                                        const nowYMD = new Date().toISOString().slice(0, 10);
+                                                                        const inactive = e.target.checked;
+                                                                        setForm(f => ({
+                                                                            ...f,
+                                                                            status: inactive ? "0" : "1",
+                                                                            end: inactive ? (f.end || nowYMD) : ""   // prefill with today if turning inactive
+                                                                        }));
+                                                                    }}
+                                                                />
+                                                                <label className="form-check-label" htmlFor="inactiveChk">
+                                                                    Inactive
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {mode === "edit" && form.status !== "1" && (
+                                                        <div className="col-12 col-md-3">
+                                                            <label className="form-label">Inactive Date</label>
+                                                            <input
+                                                                type="date"
+                                                                className={`form-control ${submitted && errors.end ? "is-invalid" : ""}`}
+                                                                value={form.end}
+                                                                onChange={(e) => setForm({ ...form, end: toYMD(e.target.value), status: "0" })}
+                                                                disabled={form.status !== "0"}
+                                                            />
+                                                            {submitted && errors.end && <div className="invalid-feedback">{errors.end}</div>}
+                                                            <div className="form-text">Set the end/separation date when marking inactive.</div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="modal-footer">
+                                        <div className="modal-footer border-0 border-top">
                                             <button type="submit" className="btn btn-primary">Save</button>
                                             <button type="button" className="btn btn-outline-secondary" onClick={() => setShowModal(false)}>Close</button>
                                         </div>
