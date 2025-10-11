@@ -5,7 +5,7 @@ export const getRoles = async () => {
   console.log(res);
   
   const data = res?.data;
-  const ok = res.status === 200 && Array.isArray(data?.roles);
+  const ok = res.status === 200 && Array.isArray(data);
   return {
     ok,
     message: data?.message || (ok ? "Roles fetched successfully" : "Failed to fetch roles"),
@@ -18,7 +18,7 @@ export const getEmployees = async () => {
   console.log(res);
 
   const data = res?.data;
-  const ok = res.status === 200 && Array.isArray(data?.employees);
+  const ok = res.status === 200 && Array.isArray(data);
   return {
     ok,
     message: data?.message || (ok ? "Employees fetched successfully" : "Failed to fetch employees"),
@@ -31,7 +31,7 @@ export const getEmployeeNames = async () => {
   console.log(res);
 
   const data = res?.data;
-  const ok = res.status === 200 && Array.isArray(data?.names);
+  const ok = res.status === 200 && Array.isArray(data);
   return {
     ok,
     message: data?.message || (ok ? "Employee names fetched successfully" : "Failed to fetch employee names"),
@@ -80,7 +80,7 @@ export const getProjects = async () => {
   const res = await http.get("/projects");
   console.log(res);
   const data = res?.data;
-  const ok = res.status === 200 && Array.isArray(data?.projects);
+  const ok = res.status === 200 && Array.isArray(data);
   return {
     ok,
     message: data?.message || (ok ? "Projects fetched successfully" : "Failed to fetch projects"),
@@ -120,6 +120,66 @@ export const deleteProject = async (id) => {
   return {
     ok,
     message: data?.message || (ok ? "Project deleted successfully" : "Failed to delete project"),
+    data: data,
+  };
+};
+
+export const getProjectNamesByEmployeeID = async (employeeId) => {
+  const res = await http.get(`/projects/trainer/${employeeId}`);
+  console.log(res);
+  const data = res?.data;
+  const ok = res.status === 200 && Array.isArray(data);
+  return {
+    ok,
+    message: data?.message || (ok ? "Project names fetched successfully" : "Failed to fetch project names"),
+    data: data,
+  };
+};
+
+export const getTasks = async () => {
+  const res = await http.get("/tasks");
+  console.log(res);
+  const data = res?.data;
+  const ok = res.status === 200 && Array.isArray(data);
+  return {
+    ok,
+    message: data?.message || (ok ? "Tasks fetched successfully" : "Failed to fetch tasks"),
+    data: data,
+  };
+};
+
+export const addTask = async (task) => {
+  const res = await http.post("/task", task);
+  console.log(res);
+  const data = res?.data;
+  const ok = res.status === 200 && data?.message === "Task added successfully";
+  return {
+    ok,
+    message: data?.message || (ok ? "Task added successfully" : "Failed to add task"),
+    data: data,
+  };
+};
+
+export const updateTask = async (id, task) => {
+  const res = await http.put(`/task/${id}`, task);
+  console.log(res);
+  const data = res?.data;
+  const ok = res.status === 200 && data?.message === "Task updated successfully";
+  return {
+    ok,
+    message: data?.message || (ok ? "Task updated successfully" : "Failed to update task"),
+    data: data,
+  };
+};
+
+export const dashboardData = async (id) => {
+  const res = await http.get(`dashboard/summary`);
+  console.log(res);
+  const data = res?.data;
+  const ok = res.status === 200 && Array.isArray(data);
+  return {
+    ok,
+    message: data?.message || (ok ? "Dashboard data fetched successfully" : "Failed to fetch dashboard data"),
     data: data,
   };
 };

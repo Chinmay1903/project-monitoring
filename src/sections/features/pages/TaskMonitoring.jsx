@@ -1,104 +1,75 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import AppLayout from "../components/AppLayout";
 import "./TaskMonitoring.css";
+import { getTasks, getEmployeeNames, getProjectNamesByEmployeeID, addTask, updateTask } from "../../../api/features";
+import SearchableSelect from "../components/SearchableSelect";
 
-/**
- * Task Monitoring (single React function)
- * - Overview: list of task entries (Day/Week/Month/Overall)
- * - Add/Edit modal (trainer+project set manager/lead/pod; hours limited unless overtime)
- * - Click trainer name → Trainer detail view with same chips + charts
- * - Sorting, delete with confirm
- * - Demo data for August 2025
- *
- * Requires recharts:  npm i recharts
- */
 import {
   ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  LineChart, Line
+  LineChart, Line, Legend
 } from "recharts";
 
 export default function TaskMonitoring() {
   /* ----------------------------- small helpers ----------------------------- */
-  const Th = ({ label, k }) => {
+  const Th = ({ label, k, sortKey, sortDir, onSort }) => {
     const active = sortKey === k;
+    console.log(sortDir);
+    
+    const icon = active ? (sortDir === "asc" ? "bi-arrow-up text-primary" : "bi-arrow-down text-primary") : "bi-arrow-down-up";
     return (
-      <th role="button" onClick={() => toggleSort(k)}>
-        <span className="me-1">{label}</span>
-        <span className={"sort " + (active ? sortDir : "")}>
-          <i className="bi bi-arrow-down-up" />
-        </span>
-      </th>
+      <th className={`sortable ${active ? "active" : ""} ${sortDir}`}>
+            <button type="button" className="sort-btn" onClick={() => onSort(k)} title={`Sort by ${label}`}>
+                {label} <i className={`bi ${icon} sort-icon`} />
+            </button>
+        </th>
     );
   };
   const toYMD = (d) => (d instanceof Date ? d.toISOString().slice(0, 10) : d);
   const today = toYMD(new Date());
 
-  /* ------------------------------ trainer map ------------------------------ */
-  // Projects assigned to each trainer (used by the modal to constrain options)
-  const trainerMap = {
-    GMS101: {
-      name: "Asha Kumar",
-      projects: [
-        { project: "Inventory Revamp", manager: "N. Gupta", lead: "S. Rao", podLead: "M. Iyer" },
-        { project: "Partner Portal", manager: "N. Gupta", lead: "S. Rao", podLead: "M. Iyer" },
-        { project: "Mobile App v3", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan" },
-      ],
-    },
-    GMS102: {
-      name: "Rahul Shah",
-      projects: [
-        { project: "Billing Migration", manager: "N. Gupta", lead: "P. Mehta", podLead: "M. Iyer" },
-        { project: "Fraud Engine", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan" },
-      ],
-    },
-    GMS103: {
-      name: "Ishita Bose",
-      projects: [
-        { project: "Mobile App v3", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan" },
-        { project: "Data Lake ETL", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan" },
-      ],
-    },
-  };
-  const trainers = Object.entries(trainerMap).map(([id, t]) => ({ id, name: t.name }));
-
   /* -------------------------------- seed data ------------------------------ */
   // Expanded sample worklog data — September 2025
-const seed = [
-  { id: "t1",  date: "2025-09-29", trainerId: "GMS101", trainer: "Asha Kumar",  project: "Inventory Revamp",  manager: "N. Gupta",    lead: "S. Rao",   podLead: "M. Iyer", hours: 6, taskCompleted: 6, reworked: 2, inProgress: 2, approved: 2, rejected: 0, reviewed: 0 },
-  { id: "t2",  date: "2025-09-29", trainerId: "GMS101", trainer: "Asha Kumar",  project: "Partner Portal",    manager: "N. Gupta",    lead: "S. Rao",   podLead: "M. Iyer", hours: 3, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 1 },
-  { id: "t3",  date: "2025-09-29", trainerId: "GMS102", trainer: "Rahul Shah",  project: "Billing Migration", manager: "N. Gupta",    lead: "P. Mehta", podLead: "M. Iyer", hours: 5, taskCompleted: 4, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+  const seed = [
+    { id: "t1", date: "2025-09-29", trainerId: "GMS101", trainer: "Asha Kumar", project: "Inventory Revamp", manager: "N. Gupta", lead: "S. Rao", podLead: "M. Iyer", hours: 6, taskCompleted: 6, reworked: 2, inProgress: 2, approved: 2, rejected: 0, reviewed: 0 },
+    { id: "t2", date: "2025-09-29", trainerId: "GMS101", trainer: "Asha Kumar", project: "Partner Portal", manager: "N. Gupta", lead: "S. Rao", podLead: "M. Iyer", hours: 3, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 1 },
+    { id: "t3", date: "2025-09-29", trainerId: "GMS102", trainer: "Rahul Shah", project: "Billing Migration", manager: "N. Gupta", lead: "P. Mehta", podLead: "M. Iyer", hours: 5, taskCompleted: 4, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
 
-  // near month end for "week"
-  { id: "t4",  date: "2025-09-28", trainerId: "GMS102", trainer: "Rahul Shah",  project: "Fraud Engine",      manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 6, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 1, reviewed: 0 },
-  { id: "t5",  date: "2025-09-27", trainerId: "GMS101", trainer: "Asha Kumar",  project: "Partner Portal",    manager: "N. Gupta",    lead: "S. Rao",   podLead: "M. Iyer", hours: 3, taskCompleted: 2, reworked: 0, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
-  { id: "t6",  date: "2025-09-26", trainerId: "GMS103", trainer: "Ishita Bose", project: "Data Lake ETL",     manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 7, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 1 },
+    // near month end for "week"
+    { id: "t4", date: "2025-09-28", trainerId: "GMS102", trainer: "Rahul Shah", project: "Fraud Engine", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 6, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 1, reviewed: 0 },
+    { id: "t5", date: "2025-09-27", trainerId: "GMS101", trainer: "Asha Kumar", project: "Partner Portal", manager: "N. Gupta", lead: "S. Rao", podLead: "M. Iyer", hours: 3, taskCompleted: 2, reworked: 0, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+    { id: "t6", date: "2025-09-26", trainerId: "GMS103", trainer: "Ishita Bose", project: "Data Lake ETL", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 7, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 1 },
 
-  // spread across the month
-  { id: "t7",  date: "2025-09-02", trainerId: "GMS101", trainer: "Asha Kumar",  project: "Inventory Revamp",  manager: "N. Gupta",    lead: "S. Rao",   podLead: "M. Iyer", hours: 7, taskCompleted: 5, reworked: 2, inProgress: 2, approved: 2, rejected: 0, reviewed: 0 },
-  { id: "t8",  date: "2025-09-03", trainerId: "GMS101", trainer: "Asha Kumar",  project: "Mobile App v3",     manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 8, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 1 },
-  { id: "t9",  date: "2025-09-05", trainerId: "GMS102", trainer: "Rahul Shah",  project: "Billing Migration", manager: "N. Gupta",    lead: "P. Mehta", podLead: "M. Iyer", hours: 4, taskCompleted: 4, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
-  { id: "t10", date: "2025-09-06", trainerId: "GMS102", trainer: "Rahul Shah",  project: "Fraud Engine",      manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 6, taskCompleted: 2, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
-  { id: "t11", date: "2025-09-08", trainerId: "GMS103", trainer: "Ishita Bose", project: "Mobile App v3",     manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 6, taskCompleted: 2, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
-  { id: "t12", date: "2025-09-10", trainerId: "GMS103", trainer: "Ishita Bose", project: "Data Lake ETL",     manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 7, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 1, reviewed: 0 },
-  { id: "t13", date: "2025-09-12", trainerId: "GMS101", trainer: "Asha Kumar",  project: "Partner Portal",    manager: "N. Gupta",    lead: "S. Rao",   podLead: "M. Iyer", hours: 2, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
-  { id: "t14", date: "2025-09-15", trainerId: "GMS101", trainer: "Asha Kumar",  project: "Inventory Revamp",  manager: "N. Gupta",    lead: "S. Rao",   podLead: "M. Iyer", hours: 6, taskCompleted: 5, reworked: 1, inProgress: 2, approved: 2, rejected: 0, reviewed: 1 },
-  { id: "t15", date: "2025-09-16", trainerId: "GMS102", trainer: "Rahul Shah",  project: "Billing Migration", manager: "N. Gupta",    lead: "P. Mehta", podLead: "M. Iyer", hours: 5, taskCompleted: 4, reworked: 0, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
-  { id: "t16", date: "2025-09-18", trainerId: "GMS103", trainer: "Ishita Bose", project: "Data Lake ETL",     manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 6, taskCompleted: 2, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
-  { id: "t17", date: "2025-09-20", trainerId: "GMS102", trainer: "Rahul Shah",  project: "Fraud Engine",      manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 6, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 1 },
-  { id: "t18", date: "2025-09-22", trainerId: "GMS101", trainer: "Asha Kumar",  project: "Mobile App v3",     manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 7, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
-  { id: "t19", date: "2025-09-24", trainerId: "GMS103", trainer: "Ishita Bose", project: "Mobile App v3",     manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 4, taskCompleted: 2, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
-  { id: "t20", date: "2025-09-25", trainerId: "GMS102", trainer: "Rahul Shah",  project: "Billing Migration", manager: "N. Gupta",    lead: "P. Mehta", podLead: "M. Iyer", hours: 5, taskCompleted: 4, reworked: 1, inProgress: 1, approved: 1, rejected: 1, reviewed: 0 },
+    // spread across the month
+    { id: "t7", date: "2025-09-02", trainerId: "GMS101", trainer: "Asha Kumar", project: "Inventory Revamp", manager: "N. Gupta", lead: "S. Rao", podLead: "M. Iyer", hours: 7, taskCompleted: 5, reworked: 2, inProgress: 2, approved: 2, rejected: 0, reviewed: 0 },
+    { id: "t8", date: "2025-09-03", trainerId: "GMS101", trainer: "Asha Kumar", project: "Mobile App v3", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 8, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 1 },
+    { id: "t9", date: "2025-09-05", trainerId: "GMS102", trainer: "Rahul Shah", project: "Billing Migration", manager: "N. Gupta", lead: "P. Mehta", podLead: "M. Iyer", hours: 4, taskCompleted: 4, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+    { id: "t10", date: "2025-09-06", trainerId: "GMS102", trainer: "Rahul Shah", project: "Fraud Engine", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 6, taskCompleted: 2, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+    { id: "t11", date: "2025-09-08", trainerId: "GMS103", trainer: "Ishita Bose", project: "Mobile App v3", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 6, taskCompleted: 2, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+    { id: "t12", date: "2025-09-10", trainerId: "GMS103", trainer: "Ishita Bose", project: "Data Lake ETL", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 7, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 1, reviewed: 0 },
+    { id: "t13", date: "2025-09-12", trainerId: "GMS101", trainer: "Asha Kumar", project: "Partner Portal", manager: "N. Gupta", lead: "S. Rao", podLead: "M. Iyer", hours: 2, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+    { id: "t14", date: "2025-09-15", trainerId: "GMS101", trainer: "Asha Kumar", project: "Inventory Revamp", manager: "N. Gupta", lead: "S. Rao", podLead: "M. Iyer", hours: 6, taskCompleted: 5, reworked: 1, inProgress: 2, approved: 2, rejected: 0, reviewed: 1 },
+    { id: "t15", date: "2025-09-16", trainerId: "GMS102", trainer: "Rahul Shah", project: "Billing Migration", manager: "N. Gupta", lead: "P. Mehta", podLead: "M. Iyer", hours: 5, taskCompleted: 4, reworked: 0, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+    { id: "t16", date: "2025-09-18", trainerId: "GMS103", trainer: "Ishita Bose", project: "Data Lake ETL", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 6, taskCompleted: 2, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+    { id: "t17", date: "2025-09-20", trainerId: "GMS102", trainer: "Rahul Shah", project: "Fraud Engine", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 6, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 1 },
+    { id: "t18", date: "2025-09-22", trainerId: "GMS101", trainer: "Asha Kumar", project: "Mobile App v3", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 7, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+    { id: "t19", date: "2025-09-24", trainerId: "GMS103", trainer: "Ishita Bose", project: "Mobile App v3", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 4, taskCompleted: 2, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+    { id: "t20", date: "2025-09-25", trainerId: "GMS102", trainer: "Rahul Shah", project: "Billing Migration", manager: "N. Gupta", lead: "P. Mehta", podLead: "M. Iyer", hours: 5, taskCompleted: 4, reworked: 1, inProgress: 1, approved: 1, rejected: 1, reviewed: 0 },
 
-  // extra mid-month coverage
-  { id: "t21", date: "2025-09-11", trainerId: "GMS101", trainer: "Asha Kumar",  project: "Inventory Revamp",  manager: "N. Gupta",    lead: "S. Rao",   podLead: "M. Iyer", hours: 6, taskCompleted: 4, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
-  { id: "t22", date: "2025-09-13", trainerId: "GMS102", trainer: "Rahul Shah",  project: "Fraud Engine",      manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 0, taskCompleted: 2, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
-  { id: "t23", date: "2025-09-19", trainerId: "GMS101", trainer: "Asha Kumar",  project: "Partner Portal",    manager: "N. Gupta",    lead: "S. Rao",   podLead: "M. Iyer", hours: 3, taskCompleted: 2, reworked: 0, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
-  { id: "t24", date: "2025-09-21", trainerId: "GMS103", trainer: "Ishita Bose", project: "Data Lake ETL",     manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 7, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 1 },
-];
+    // extra mid-month coverage
+    { id: "t21", date: "2025-09-11", trainerId: "GMS101", trainer: "Asha Kumar", project: "Inventory Revamp", manager: "N. Gupta", lead: "S. Rao", podLead: "M. Iyer", hours: 6, taskCompleted: 4, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+    { id: "t22", date: "2025-09-13", trainerId: "GMS102", trainer: "Rahul Shah", project: "Fraud Engine", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 0, taskCompleted: 2, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+    { id: "t23", date: "2025-09-19", trainerId: "GMS101", trainer: "Asha Kumar", project: "Partner Portal", manager: "N. Gupta", lead: "S. Rao", podLead: "M. Iyer", hours: 3, taskCompleted: 2, reworked: 0, inProgress: 1, approved: 1, rejected: 0, reviewed: 0 },
+    { id: "t24", date: "2025-09-21", trainerId: "GMS103", trainer: "Ishita Bose", project: "Data Lake ETL", manager: "L. Kulkarni", lead: "A. Verma", podLead: "Z. Khan", hours: 7, taskCompleted: 3, reworked: 1, inProgress: 1, approved: 1, rejected: 0, reviewed: 1 },
+  ];
 
 
   const [rows, setRows] = useState(seed);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [trainers, setTrainers] = useState([]); // {id, name, projects:[{project, manager, lead, podLead}]}
+  const [trainerProjects, setTrainerProjects] = useState([]); // {id, name, manager, lead, podLead}
+  const [loadingProjects, setLoadingProjects] = useState(false);
 
   /* --------------------------------- filters -------------------------------- */
   const [range, setRange] = useState("day"); // day | week | month | overall
@@ -124,7 +95,7 @@ const seed = [
 
   /* --------------------------------- sorting -------------------------------- */
   const [sortKey, setSortKey] = useState("date");
-  const [sortDir, setSortDir] = useState("desc");
+  const [sortDir, setSortDir] = useState("asc");
   const toggleSort = (key) => {
     if (sortKey === key) setSortDir(d => (d === "asc" ? "desc" : "asc"));
     else { setSortKey(key); setSortDir("asc"); }
@@ -132,7 +103,7 @@ const seed = [
 
   /* ---------------------------- modal state/logic ---------------------------- */
   const emptyForm = {
-    date: today, trainerId: "", trainer: "",
+    id: 0, date: today, trainerId: "", trainer: "", project_id: 0,
     project: "", manager: "", lead: "", podLead: "",
     hours: "", overtime: false, taskCompleted: 0, reworked: 0, inProgress: 0, approved: 0, rejected: 0, reviewed: 0
   };
@@ -140,6 +111,65 @@ const seed = [
   const [mode, setMode] = useState("add"); // add | edit
   const [form, setForm] = useState(emptyForm);
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [taskRes, namesRes] = await Promise.all([getTasks(), getEmployeeNames()]);
+        // tasks              
+        const taskData = Array.isArray(taskRes?.data) ? taskRes.data.map(t => ({
+          ...emptyForm,
+          id: Number(t.task_id || 0),
+          date: t.date || today,
+          trainerId: t.employees_id || "",
+          trainer: t.trainer_name || "",
+          project_id: Number(t.project_id || 0),
+          project: t.project_name || "",
+          manager: t.manager || "",
+          lead: t.lead || "",
+          podLead: t.pod_lead || "",
+          hours: Number(t.hours_logged || 0),
+          inProgress: Number(t.task_inprogress || 0),
+          taskCompleted: Number(t.task_completed || 0),
+          reworked: Number(t.reworked || 0),
+          approved: Number(t.task_approved || 0),
+          rejected: Number(t.rejected || 0),
+          reviewed: Number(t.reviewed || 0),
+        })) : [];
+        // employee names
+        console.log("Loaded tasks:", taskData);
+        setRows(taskData);
+        setTrainers(Array.isArray(namesRes?.data) ? namesRes.data : []);
+        console.log("Loaded employee names:", trainers, typeof trainers);
+        
+      } catch (err) {
+        console.error("Failed loading tasks or employee names", err);
+        setError("Failed to load data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  useEffect(() => {if (!form.trainerId) return;                    // need a trainer first
+  if (loadingProjects) return;
+
+  if (trainerProjects.length === 0) {
+    // no projects for this trainer → clear selection
+    setForm(f => ({ ...f, project_id: "", project:"", manager:"", lead:"", podLead:"" }));
+    return;
+  }
+
+  // If current selection is empty or not in the new list, pick the first and trigger handler
+  const hasSelected = trainerProjects.some(p => String(p.project_id) === String(form.project_id));
+  if (!hasSelected) {
+    const firstId = String(trainerProjects[0].project_id);
+    onProjectChange(firstId);                     // ← programmatically trigger
+  }
+}, [form.trainerId, loadingProjects, trainerProjects]);
 
   const normalize = (f) => ({
     date: f.date || today,
@@ -156,12 +186,12 @@ const seed = [
     reworked: f.reworked ?? 0,
     approved: f.approved ?? 0,
     rejected: f.rejected ?? 0,
-    reviewed: f.reviewed ?? 0,  
+    reviewed: f.reviewed ?? 0,
   });
 
   const onAdd = () => {
     setMode("add");
-    setForm(normalize(emptyForm));
+    setForm(emptyForm);
     setSubmitted(false);
     setShowModal(true);
   };
@@ -169,6 +199,7 @@ const seed = [
   const onEdit = (r) => {
     setMode("edit");
     setForm(normalize({ ...r }));
+    loadProjectsForTrainer(r.trainer);
     setSubmitted(false);
     setShowModal(true);
   };
@@ -179,43 +210,69 @@ const seed = [
     }
   };
 
+  const loadProjectsForTrainer = async (trainerId) => {
+    if (!trainerId) {
+      setTrainerProjects([]);
+      return;
+    }
+    setLoadingProjects(true);
+    const res = await getProjectNamesByEmployeeID(trainerId);
+    if (res.ok) {
+      setTrainerProjects(res.data || []);
+    } else {
+      console.error("Failed to load projects", res.message);
+      setTrainerProjects([]);
+    }
+    setLoadingProjects(false);
+  };
+
   // When trainer changes → set id and clear project chain
-  const onTrainerChange = (trainerId) => {
-    const t = trainers.find(x => x.id === trainerId);
+  const onTrainerChange = async (trainerId) => {
+    console.log("Selected trainer:", trainerId, typeof trainerId);
+    
+    const t = trainers.find(x => x.employees_id === trainerId);
+    await loadProjectsForTrainer(t.full_name);
     setForm(f => ({
       ...f,
       trainerId,
-      trainer: t ? t.name : "",
-      project: "",
-      manager: "", lead: "", podLead: ""
+      trainer: t ? t.full_name : "",
+      project_id: trainerProjects.length >= 1 ? trainerProjects[0].project_id : 0,
+      project: trainerProjects.length >= 1 ? trainerProjects[0].project_name : "",
+      manager: trainerProjects.length >= 1 ? trainerProjects[0].gms_manager : "",
+      lead: trainerProjects.length >= 1 ? trainerProjects[0].lead_name : "",
+      podLead: trainerProjects.length >= 1 ? trainerProjects[0].pod_name : ""
     }));
+    console.log("Form after trainer change:", form, trainerProjects);
+    
   };
 
   // When project changes → set manager/lead/pod
-  const onProjectChange = (project) => {
-    const t = trainerMap[form.trainerId];
-    const found = t?.projects.find(p => p.project === project);
+  const onProjectChange = (projectId) => {
+    const found = trainerProjects.find(p => p.project_id === Number(projectId));
+    console.log("Selected project:", projectId, typeof projectId, found);
+
     setForm(f => ({
       ...f,
-      project,
-      manager: found?.manager || "",
-      lead: found?.lead || "",
-      podLead: found?.podLead || ""
+      project_id: projectId,
+      project: found?.project_name || "",
+      manager: found?.gms_manager || "",
+      lead: found?.lead_name || "",
+      podLead: found?.pod_name || ""
     }));
   };
 
-  // available projects (exclude ones already entered for that trainer + date)
-  const availableProjects = useMemo(() => {
-    const base = trainerMap[form.trainerId]?.projects ?? [];
-    const taken = rows
-      .filter(r =>
-        r.trainerId === form.trainerId &&
-        r.date === form.date &&
-        (mode === "add" || r.id !== form.id)
-      )
-      .map(r => r.project);
-    return base.filter(p => !taken.includes(p.project));
-  }, [trainerMap, form.trainerId, form.date, rows, mode, form.id]);
+  // // available projects (exclude ones already entered for that trainer + date)
+  // const availableProjects = useMemo(() => {
+  //   const base = trainerMap[form.trainerId]?.projects ?? [];
+  //   const taken = rows
+  //     .filter(r =>
+  //       r.trainerId === form.trainerId &&
+  //       r.date === form.date &&
+  //       (mode === "add" || r.id !== form.id)
+  //     )
+  //     .map(r => r.project);
+  //   return base.filter(p => !taken.includes(p.project));
+  // }, [trainerMap, form.trainerId, form.date, rows, mode, form.id]);
 
 
   /* -------------------------------- validation ------------------------------- */
@@ -237,21 +294,75 @@ const seed = [
     return e;
   }, [form, hoursNum]);
 
-  const onSave = (e) => {
+  const onSave = async (e) => {
     e.preventDefault();
     setSubmitted(true);
     if (Object.keys(errors).length) return;
 
+    const payload = {
+      employees_id: form.trainerId,
+      project_id: form.project_id,
+      date: form.date || today,
+      task_completed: Number(form.taskCompleted || 0),
+      task_inprogress: Number(form.inProgress || 0),
+      task_reworked: Number(form.reworked || 0),
+      task_approved: Number(form.approved || 0),
+      task_rejected: Number(form.rejected || 0),
+      task_reviewed: Number(form.reviewed || 0),
+      hours_logged: Number(form.hours || 0),
+    };
+
     // create/update
     if (mode === "add") {
+      console.log(payload);
       const id = "t" + Math.random().toString(36).slice(2, 8);
-      setRows(prev => [
-        { id, ...form, hours: Number(form.hours || 0), taskCompleted: Number(form.taskCompleted || 0), reworked: Number(form.reworked || 0), inProgress: Number(form.inProgress || 0), approved: Number(form.approved || 0) },
-        ...prev
-      ]);
+      const res = await addTask(payload);
+      console.log("Add task response:", res);
+
+      const created = res.data ?? res ?? { ...form, id: id || `GMP${Date.now()}`, name: payload.project_name };
+      const row = {
+        id: Number(created.task_id),
+        date: created.date || today,
+        trainerId: created.employees_id || "",
+        trainer: created.trainer_name || "",
+        project_id: Number(created.project_id || 0),
+        project: created.project_name || "",
+        manager: created.manager || "",
+        lead: created.lead || "",
+        podLead: created.pod_lead || "",
+        hours: Number(created.hours_logged || 0),
+        inProgress: Number(created.task_inprogress || 0),
+        taskCompleted: Number(created.task_completed || 0),
+        reworked: Number(created.reworked || 0),
+        approved: Number(created.task_approved || 0),
+        rejected: Number(created.rejected || 0),
+        reviewed: Number(created.reviewed || 0),
+      };
+      setRows(prev => [row, ...prev]);
     } else {
+      const res = await updateTask(form.id, payload);
+      console.log("Update task response:", res);
+
+      const updated = res?.data ?? res ?? payload;
       setRows(prev => prev.map(r => r.id === form.id
-        ? { ...form, hours: Number(form.hours || 0), taskCompleted: Number(form.taskCompleted || 0), reworked: Number(form.reworked || 0), inProgress: Number(form.inProgress || 0), approved: Number(form.approved || 0) }
+        ? {
+          ...form,
+          date: updated.date || today,
+          trainerId: updated.employees_id || "",
+          trainer: updated.trainer_name || "",
+          project_id: Number(updated.project_id || 0),
+          project: updated.project_name || "",
+          manager: updated.manager || "",
+          lead: updated.lead || "",
+          podLead: updated.pod_lead || "",
+          hours: Number(updated.hours_logged || 0),
+          inProgress: Number(updated.task_inprogress || 0),
+          taskCompleted: Number(updated.task_completed || 0),
+          reworked: Number(updated.reworked || 0),
+          approved: Number(updated.task_approved || 0),
+          rejected: Number(updated.rejected || 0),
+          reviewed: Number(updated.reviewed || 0),
+        }
         : r
       ));
     }
@@ -287,15 +398,44 @@ const seed = [
     baseRows.forEach(r => { map[r.date] = (map[r.date] || 0) + Number(r.hours || 0); });
     const days = Object.keys(map).sort();
     const hoursSeries = days.map(d => ({ date: new Date(d).toLocaleDateString("en-US", { month: "short", day: "2-digit" }), hours: map[d] }));
+    console.log("Hours series:", hoursSeries);
 
     return { total, hoursSeries };
   }, [baseRows]);
 
   /* ---------------------------------- view ---------------------------------- */
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="projects-page">
+          <div className="text-center py-5">
+            <div className="spinner-border text-primary" role="status"><span className="visually-hidden">Loading...</span></div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+  if (error) {
+    return (
+      <AppLayout>
+        <div className="projects-page">
+          <div className="alert alert-danger my-4">{error}</div>
+        </div>
+      </AppLayout>
+    );
+  }
   return (
     <AppLayout>
       <div className="tasks-page">
-        <div className="tasks-actions d-flex justify-content-end">
+        <div className="tasks-actions d-flex justify-content-end mb-2 gap-2">
+          <button className="btn btn-primary action-btn" onClick={() => { }} title="Import Data">
+            <i className="bi bi-database-up" />
+            {/* <span className="label">Import Data</span> */}
+          </button>
+          <button className="btn btn-primary action-btn" onClick={() => { }} title="Export Data">
+            <i className="bi bi-database-down" />
+            {/* <span className="label">Export Data</span> */}
+          </button>
           <button className="btn btn-primary" onClick={onAdd} title="Add Task">
             <i className="bi bi-plus-lg" />
           </button>
@@ -338,19 +478,19 @@ const seed = [
             <table className="table table-hover tasks-table">
               <thead>
                 <tr>
-                  <Th label="Date" k="date" />
-                  <Th label="Trainer (ID)" k="trainer" />
-                  <Th label="Project" k="project" />
-                  <Th label="Manager" k="manager" />
-                  <Th label="Lead" k="lead" />
-                  <Th label="Pod Lead" k="podLead" />
-                  <Th label="Hours" k="hours" />
-                  <Th label="In Progress" k="inProgress" />
-                  <Th label="Task Completed" k="taskCompleted" />
-                  <Th label="Reworked" k="reworked" />
-                  <Th label="Approved" k="approved" />
-                  <Th label="Rejected" k="rejected" />
-                  <Th label="Reviewed" k="reviewed" />
+                  <Th label="Date" k="date" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <Th label="Trainer (ID)" k="trainer" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <Th label="Project" k="project" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <Th label="Manager" k="manager" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <Th label="Lead" k="lead" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <Th label="Pod Lead" k="podLead" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <Th label="Hours" k="hours" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <Th label="In Progress" k="inProgress" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <Th label="Task Completed" k="taskCompleted" ortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <Th label="Reworked" k="reworked" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <Th label="Approved" k="approved" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <Th label="Rejected" k="rejected" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <Th label="Reviewed" k="reviewed" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                   <th style={{ width: 110 }} className="text-end">Actions</th>
                 </tr>
               </thead>
@@ -400,16 +540,19 @@ const seed = [
                   <div style={{ width: "100%", height: 260 }}>
                     <ResponsiveContainer>
                       <BarChart data={[
-                        { status: "New Task", count: agg.total.newTask },
+                        { status: "Task Completed", count: agg.total.taskCompleted },
                         { status: "Reworked", count: agg.total.reworked },
                         { status: "In Progress", count: agg.total.inProgress },
                         { status: "Approved", count: agg.total.approved },
+                        { status: "Rejected", count: agg.total.rejected },
+                        { status: "Reviewed", count: agg.total.reviewed },
                       ]}>
                         <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" />
                         <XAxis dataKey="status" />
                         <YAxis allowDecimals={false} />
                         <Tooltip />
-                        <Bar dataKey="count" fill="#b7d3f9" radius={[4, 4, 0, 0]} />
+                        <Legend />
+                        <Bar dataKey="count" fill="#3b81d6" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -419,17 +562,29 @@ const seed = [
 
             <div className="col-12 col-lg-6">
               <div className="card shadow-sm h-100">
-                <div className="card-header"><h6 className="mb-0">Monthly Hours</h6></div>
+                <div className="card-header"><h6 className="mb-0">{range[0].toUpperCase() + range.slice(1)} Hours</h6></div>
                 <div className="card-body">
                   <div style={{ width: "100%", height: 260 }}>
                     <ResponsiveContainer>
-                      <LineChart data={agg.hoursSeries}>
-                        <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis allowDecimals={false} />
-                        <Tooltip />
-                        <Line type="monotone" dataKey="hours" stroke="#3b81d6" strokeWidth={2} dot />
-                      </LineChart>
+                      {(agg.hoursSeries || []).length === 1 ? (
+                        <BarChart data={agg.hoursSeries}>
+                          <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" />
+                          <XAxis dataKey="date" />
+                          <YAxis allowDecimals={false} />
+                          <Tooltip />
+                          <Legend />
+                          <Bar dataKey="hours" fill="#3b81d6" radius={[6, 6, 0, 0]} maxBarSize={109} />
+                        </BarChart>
+                      ) : (
+                        <LineChart data={agg.hoursSeries}>
+                          <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" />
+                          <XAxis dataKey="date" />
+                          <YAxis allowDecimals={false} />
+                          <Tooltip />
+                          <Legend />
+                          <Line type="monotone" dataKey="hours" stroke="#3b81d6" strokeWidth={2} dot />
+                        </LineChart>
+                      )}
                     </ResponsiveContainer>
                   </div>
                 </div>
@@ -455,14 +610,18 @@ const seed = [
                         <div className="row g-3">
                           <div className="col-12 col-md-6">
                             <label className="form-label">Resourse Name <span className="text-danger">*</span></label>
-                            <select
-                              className={`form-select ${submitted && errors.trainerId ? "is-invalid" : ""}`}
+                            <SearchableSelect
+                              items={Array.isArray(trainers) ? trainers : []}
+                              valueMode="value"
+                              valueField="employees_id"
                               value={form.trainerId}
-                              onChange={e => onTrainerChange(e.target.value)}
-                            >
-                              <option value="">Select Resourse</option>
-                              {trainers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                            </select>
+                              onChange={value => onTrainerChange(value || "")}
+                              keyField="employees_id"
+                              labelField="full_name"
+                              className={`${submitted && errors.trainerId ? "is-invalid" : ""}`}
+                              placeholder="Select Resourse"
+                              disabled={ mode === "edit" }
+                            />
                             {submitted && errors.trainerId && <div className="invalid-feedback">{errors.trainerId}</div>}
                           </div>
 
@@ -475,15 +634,18 @@ const seed = [
                             <label className="form-label">Project Name <span className="text-danger">*</span></label>
                             <select
                               className={`form-select ${submitted && errors.project ? "is-invalid" : ""}`}
-                              value={form.project}
+                              value={form.project_id}
                               onChange={e => onProjectChange(e.target.value)}
-                              disabled={!form.trainerId}
+                              disabled={!form.trainerId || loadingProjects || mode === "edit"}
                             >
-                              <option value="">{form.trainerId ? "Select project" : "Select trainer first"}</option>
-                              {availableProjects.map(p => <option key={p.project} value={p.project}>{p.project}</option>)}
+                              {trainerProjects.length === 0 ? (
+                                <option value="">{form.trainerId ? (loadingProjects ? "Loading projects..." : "Select project") : "Select trainer first"}</option>
+                              ) : (
+                                trainerProjects.map(p => <option key={p.project_id} value={p.project_id}>{p.project_name}</option>)
+                              )}
                             </select>
                             {submitted && errors.project && <div className="invalid-feedback">{errors.project}</div>}
-                            <div className="form-text">Shows only projects assigned to the selected trainer, excluding projects already entered for the chosen date.</div>
+                            <div className="form-text">Shows only projects assigned to the selected trainer.</div>
                           </div>
 
                           <div className="col-12 col-md-6">
@@ -518,11 +680,11 @@ const seed = [
                               <input
                                 type="number"
                                 min="0"
-                                max="24"
+                                max={form.overtime ? "24" : "8"}
                                 className={`form-control ${submitted && errors.hours ? "is-invalid" : ""}`}
                                 value={form.hours}
                                 onChange={e => setForm(f => ({ ...f, hours: e.target.value }))}
-                                placeholder="0-24"
+                                placeholder={"e.g. 0 to " + (form.overtime ? "24" : "8")}
                               />
                               <div className="form-check ms-2">
                                 <input className="form-check-input" type="checkbox" id="chkOt" checked={form.overtime} onChange={e => setForm(f => ({ ...f, overtime: e.target.checked }))} />

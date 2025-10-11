@@ -256,7 +256,7 @@ export default function ResourceList() {
     // ---------- header cell ----------
     const Th = ({ label, k }) => {
         const active = sortKey === k;
-        const icon = active ? (sortDir === "asc" ? "bi-caret-up-fill" : "bi-caret-down-fill") : "bi-arrow-down-up";
+        const icon = active ? (sortDir === "asc" ? "bi-arrow-up text-primary" : "bi-arrow-down text-primary") : "bi-arrow-down-up";
         return (
             <th className={`sortable ${active ? "active" : ""}`}>
                 <button type="button" className="sort-btn" onClick={() => toggleSort(k)} title={`Sort by ${label}`}>
@@ -303,7 +303,15 @@ export default function ResourceList() {
         <AppLayout>
             <div className="rl-scope px-2 py-2">
                 {/* Add button (icon-first) */}
-                <div className="d-flex justify-content-end mb-2">
+                <div className="d-flex justify-content-end mb-2 gap-2">
+                    <button className="btn btn-primary action-btn" onClick={() => {}}>
+                        <i className="bi bi-database-up" />
+                        <span className="label">Import Data</span>
+                    </button>
+                    <button className="btn btn-primary action-btn" onClick={() => {}}>
+                        <i className="bi bi-database-down" />
+                        <span className="label">Export Data</span>
+                    </button>
                     <button className="btn btn-primary action-btn" onClick={onAdd}>
                         <i className="bi bi-plus-circle" />
                         <span className="label">Add User</span>
@@ -381,7 +389,7 @@ export default function ResourceList() {
                                         <td>{r.skill}</td>
                                         <td>{r.exp}</td>
                                         <td>{toDMY(r.start)}</td>
-                                        {showInactive && <td>{r.end || "-"}</td>}
+                                        {showInactive && <td>{toDMY(r.end) || "-"}</td>}
                                         <td className="actions-col">
                                             <div className="action-wrap" role="group" aria-label="Actions">
                                                 <button className="btn btn-outline-secondary btn-sm action-btn" onClick={() => onEdit(r)} title="Edit">
@@ -533,53 +541,57 @@ export default function ResourceList() {
                                                             onChange={(e) => setForm({ ...form, city: e.target.value })} />
                                                     </div>
 
-                                                    <div className="col-12 col-md-3">
-                                                        <label className="form-label">Start Date <span className="text-danger">*</span></label>
-                                                        <input type="date" 
-                                                            className={`form-control ${submitted && errors.start ? "is-invalid" : ""}`}
-                                                            value={form.start}
-                                                            onChange={(e) => setForm({ ...form, start: e.target.value })} />
-                                                        {submitted && errors.start && <div className="invalid-feedback">{errors.start}</div>}
-                                                        <div className="form-text">Default to today; format dd/mm/yyyy ({ddmmyyyy})</div>
-                                                    </div>
-                                                    {mode === "edit" && (
-                                                        <div className="col-12 col-md-2">
-                                                            <div className="form-check mt-4">
-                                                                <input
-                                                                    className="form-check-input"
-                                                                    type="checkbox"
-                                                                    id="inactiveChk"
-                                                                    checked={form.status === "0"}
-                                                                    onChange={(e) => {
-                                                                        const nowYMD = new Date().toISOString().slice(0, 10);
-                                                                        const inactive = e.target.checked;
-                                                                        setForm(f => ({
-                                                                            ...f,
-                                                                            status: inactive ? "0" : "1",
-                                                                            end: inactive ? (f.end || nowYMD) : ""   // prefill with today if turning inactive
-                                                                        }));
-                                                                    }}
-                                                                />
-                                                                <label className="form-check-label" htmlFor="inactiveChk">
-                                                                    Inactive
-                                                                </label>
+                                                    <div className="col-12 col-md-5">
+                                                        <div>
+                                                            <label className="form-label">Start Date <span className="text-danger">*</span></label>
+                                                            <div className="d-flex align-items-center gap-2">
+                                                                <input type="date"
+                                                                    className={`form-control ${submitted && errors.start ? "is-invalid" : ""}`}
+                                                                    value={form.start}
+                                                                    onChange={(e) => setForm({ ...form, start: e.target.value })} />
+                                                                {mode === "edit" && (
+                                                                <div className="form-check ms-2">
+                                                                    <input
+                                                                        className="form-check-input"
+                                                                        type="checkbox"
+                                                                        id="inactiveChk"
+                                                                        checked={form.status === "0"}
+                                                                        onChange={(e) => {
+                                                                            const nowYMD = new Date().toISOString().slice(0, 10);
+                                                                            const inactive = e.target.checked;
+                                                                            setForm(f => ({
+                                                                                ...f,
+                                                                                status: inactive ? "0" : "1",
+                                                                                end: inactive ? (f.end || nowYMD) : ""   // prefill with today if turning inactive
+                                                                            }));
+                                                                        }}
+                                                                    />
+                                                                    <label className="form-check-label" htmlFor="inactiveChk">
+                                                                        Inactive
+                                                                    </label>
+                                                                </div>
+                                                                )}
                                                             </div>
+                                                            {submitted && errors.start && <div className="invalid-feedback">{errors.start}</div>}
+                                                            <div className="form-text">Default to today; format dd/mm/yyyy ({ddmmyyyy})</div>
                                                         </div>
-                                                    )}
-                                                    {mode === "edit" && form.status !== "1" && (
-                                                        <div className="col-12 col-md-3">
-                                                            <label className="form-label">Inactive Date</label>
-                                                            <input
-                                                                type="date"
-                                                                className={`form-control ${submitted && errors.end ? "is-invalid" : ""}`}
-                                                                value={form.end}
-                                                                onChange={(e) => setForm({ ...form, end: toYMD(e.target.value), status: "0" })}
-                                                                disabled={form.status !== "0"}
-                                                            />
-                                                            {submitted && errors.end && <div className="invalid-feedback">{errors.end}</div>}
-                                                            <div className="form-text">Set the end/separation date when marking inactive.</div>
-                                                        </div>
-                                                    )}
+                                                    </div>
+                                                    <div className="col-12 col-md-3">
+                                                        {mode === "edit" && form.status !== "1" && (
+                                                            <div>
+                                                                <label className="form-label">Inactive Date</label>
+                                                                <input
+                                                                    type="date"
+                                                                    className={`form-control ${submitted && errors.end ? "is-invalid" : ""}`}
+                                                                    value={form.end}
+                                                                    onChange={(e) => setForm({ ...form, end: e.target.value, status: "0" })}
+                                                                    disabled={form.status !== "0"}
+                                                                />
+                                                                {submitted && errors.end && <div className="invalid-feedback">{errors.end}</div>}
+                                                                <div className="form-text">Set the end/separation date.Default to today; format dd/mm/yyyy</div>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

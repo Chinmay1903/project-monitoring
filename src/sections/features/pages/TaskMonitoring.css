@@ -113,9 +113,30 @@ th .sort.desc { color:#0d6efd; }
 .tasks-table td, .tasks-table th{ vertical-align: middle; }
 
 /* Sort indicator */
-th .sort{ color:#9ca3af; }
-th .sort.asc  { color:#0d6efd; transform: rotate(180deg); display:inline-block; }
-th .sort.desc { color:#0d6efd; }
+.tasks-table th.sortable {
+  user-select: none;
+}
+
+.tasks-table th.sortable > button.sort-btn {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  color: inherit;
+}
+
+.tasks-table th.sortable .sort-icon {
+  opacity: .6;
+}
+
+.tasks-table th.sortable.active .sort-icon {
+  opacity: 1;
+}
+
 
 /* Trainer link */
 .name-link{ color:#0d6efd; text-decoration:none; }

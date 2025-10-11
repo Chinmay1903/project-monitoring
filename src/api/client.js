@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL
-  || "http://localhost:8000"; // fallback
+  || "http://localhost:9000"; // fallback
 
 const http = axios.create({
   baseURL: BASE_URL,

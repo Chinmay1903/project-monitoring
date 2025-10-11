@@ -12,7 +12,7 @@ export default function AppLayout({
       <div className="container-fluid px-0 app-shell">
         <AppHeader />
         <main className="app-main">{children}</main>
-        <footer className="bg-white border-top text-center py-2 app-footer shadow-lg">
+        <footer className="text-center py-2 app-footer">
           {footerText}
         </footer>
       </div>
